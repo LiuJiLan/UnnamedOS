@@ -28,3 +28,4 @@
 - 因为测试用的elf文件的会被加载到0x80000000, 而bootblack的栈就在其放置起点位置附近
 - 如果testtestbios.bin放在0x80000000处, bootblock的栈内容会被覆盖
 - (如果elf文件大, 其实不止栈, 代码也会一起被覆盖, 这将会引发unexpectable behavior)
+- 实际情况不用担心这个问题, 因为实际运行的代码和栈都会在由flash映射到内存的空间, 而不是SRAM映射到内存的空间
