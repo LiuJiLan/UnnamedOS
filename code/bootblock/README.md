@@ -24,7 +24,7 @@
 - (程序入口这个值是由测试用elf文件决定的, 也可以是其他的值, 由bootblock去处理)
 - 测试程序内容是向uart串口输出"Hello, RVOS!\n"
 
-## qemu测试 —— 为啥testtestbios.bin不放在0x80000000
+## qemu测试 —— 为啥testbios.bin不放在0x80000000
 - 因为测试用的elf文件的会被加载到0x80000000, 而bootblack的栈就在其放置起点位置附近
 - 如果testtestbios.bin放在0x80000000处, bootblock的栈内容会被覆盖
 - (如果elf文件大, 其实不止栈, 代码也会一起被覆盖, 这将会引发unexpectable behavior)
