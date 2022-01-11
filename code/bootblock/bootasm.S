@@ -24,7 +24,7 @@ start:
     //但不能使用这个值, 这个值对于flash中的程序而言转跳太远了(不确定是不是我自己写错了)
     //我们暂时把栈开辟在flash中, 但这样对于使用ROM的平台而言则不能使用
     //之后尝试能否把栈在此时就放到SRAM中
-    //注意不要写错了, boot_stack + STACK_SIZE才是栈顶
+    //注意不要写错了, xv6中直接指定的就是栈顶, 我们这个版本中boot_stack + STACK_SIZE才是栈顶
     call    bootmain
 
     //bootmain理应不返回
