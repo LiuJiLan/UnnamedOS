@@ -16,7 +16,6 @@
 # 后记
 
 ## Error: offset too large
-
 - 之前尝试把启动栈栈顶设置在0x803FFFF0, 然后报错```Error: offset too large```
 - 这个错误提示很有误导性, 它让我们觉得问题出在la的那个目标太远了。
 - 但我们翻阅[riscv-gnu-toolchain](https://github.com/riscv-collab/riscv-gnu-toolchain)的源码, 能在[这里](https://github.com/riscv-collab/riscv-binutils-gdb/blob/116a737f438d03a1bd6aa706b6ea0b4022f3b7e2/gas/testsuite/gas/riscv/lla64-fail.l)这里找到这个警告的文本文件。
