@@ -5,7 +5,7 @@
 //  Created by LiuJiLan on 2022/1/6.
 //
 
-#define ELF_BASE_ADDR   0x80201000U
+#define ELF_BASE_ADDR   0x01800U
 //  文件加载的位置 + ???? (???通过dd指定)
 //  后续应该找到一个优雅的方式来设置这个值
 //  一开始设的值是0x80000000 + ????, 然后一直找不到值
