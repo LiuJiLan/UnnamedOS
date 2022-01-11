@@ -36,10 +36,10 @@ https://blog.csdn.net/fuxy3/article/details/104732541
 
 # 2.项目结构
 
-xv6-qemu
-├── backup                  //  草稿的备份, 有一些掉过的坑, 感兴趣可以瞅瞅
-├── code                    //  代码
-│   ├── app (暂时还没有创建)  //用户程序
-│   ├── bootblock           // bootloader
-│   └── kernel              // 内核
-└── README.md
+- xv6-qemu
+- ├── backup                  //  草稿的备份, 有一些掉过的坑, 感兴趣可以瞅瞅
+- ├── code                    //  代码
+- │   ├── app (暂时还没有创建)  //用户程序
+- │   ├── bootblock           // bootloader
+- │   └── kernel              // 内核
+- └── README.md
