@@ -22,7 +22,7 @@ bootblock.bin: bootasm.S bootmain.c
 	$(CC) $(CFLAG) -c bootmain.c -o bootmain.o
 	$(CC) $(CFLAG) -c bootasm.S -o bootasm.o
 	$(LD) -T ./testfile/test.ld -o bootblock.o bootasm.o bootmain.o
-	$(OBJDUMP) -S bootblock.o > bootblock.asm
+	#$(OBJDUMP) -S bootblock.o > bootblock.asm
 	$(OBJCOPY) -S -O binary -j .text bootblock.o bootblock.bin
 	
 testbios.bin: bootblock.bin
