@@ -5,10 +5,12 @@
 //  Created by LiuJiLan on 2022/1/9.
 //
 
-//#include "asm.h"
 #include "memlayout.h"
 //#include "mmu.h"
-//#include "param.h"
+//  xv6中"mmu.h"存储了部分有关建立页表所需的宏定义
+//  例如分页模式之类的参数
+//  第二版再来讨论是否需要把这些东西放入头文件中
+#include "param.h"
 
 //  _start是给bootblock使用用来加载elf文件的程序入口
 //  entry使用的是链接脚本中的虚拟地址
@@ -25,5 +27,35 @@ entry:
     //  xv6中此处只开启了大页模式, 推测是出于编程简单的原因
     //  在此也暂时保持和xv6保持一致, 暂时只采用一级页表映射
 
-    //  此时虚拟内存并没有完全精准的映射, 相当于30-38位相同的合法虚拟地址都会映射到统一物理地址
-    //
+    //  想开页表先进S-Mode
+    //  x86体系中内核有着最高权限, risc-v中内核上还有M-Mode
+    //  这也是为什么需要SBI
+    //  Note: 进S-Mode在实际应该在SBI启动的末尾完成, 我们这里只是初期设计, 放入代办事项
+    
+    csrr    a0, mhartid
+    li      t0, 0x1 << 11   //  mstatus.MPP = 0b01 S Mode
+    csrs    mstatus, t0
+
+    la      t0, entry_s_mode
+    csrw    mepc, t0        //  为什么这么做参考手册中mret指令
+
+    mret
+
+entry_s_mode:               //  标志着进入了S-Mode
+    //  开始设置satp寄存器
+    la      t0, (V2P_WO(entrypgdir))
+    srli    t0, t0, 12      //  右移, 空位填0
+
+    li      t1, 0x8 << 60   //  8代表Sv39分页模式
+    or      t0, t0, t1
+
+    csrw    satp, t0        //  启动分页
+    sfence.vma              //  刷新快表
+
+    
+    la      sp, stack + KSTACKSIZE  //  "param.h"中指定
+
+    la      t0, main        //  进kernel的main函数
+    jr      t0
+
+.comm stack, KSTACKSIZE
