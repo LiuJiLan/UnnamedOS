@@ -24,6 +24,7 @@ https://rcore-os.github.io/rCore_tutorial_doc/chapter2/part5.html
 此处我选择了最新的stable版的qemu-6.1.1
 (暂时遇到了mstatus.MPP只能为3然后运行mret的情况)
 (含6.0.0以上都有问题)
+改为了5.2.0, mret问题放入代办事项
 ```
 wget https://download.qemu.org/qemu-5.2.0.tar.xz
 tar xvJf qemu-5.2.0.tar.xz
