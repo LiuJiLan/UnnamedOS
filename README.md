@@ -60,7 +60,7 @@ https://blog.csdn.net/fuxy3/article/details/104732541
 # 3.To Do List
 
 ## To Do
-* [ ] mret问题
-* [ ] 实现SBI
+* [ ] mret问题    entry.S
+* [ ] 实现SBI     entry.S
 
 ## Done
