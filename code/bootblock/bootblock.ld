@@ -1,5 +1,3 @@
-//暂时写的很简陋
-
 OUTPUT_ARCH( "riscv" )
 
 ENTRY(start)
@@ -8,7 +6,7 @@ ENTRY(start)
 SECTIONS
 {
 	.text 0x01000: {
-        bootasm.o(.text)    // 要把bootasm放在前面
+        bootasm.o(.text)
         *(.text)
 	}
 
