@@ -28,11 +28,20 @@ entry:
     //  在此也暂时保持和xv6保持一致, 暂时只采用一级页表映射
 
     //  想开页表先进S-Mode
+    //  (因为M-Mode下是否使用虚拟地址转换是不确定的)
+    //  如果有PMP系统需要先配置, 不然mret之后会有错误
     //  x86体系中内核有着最高权限, risc-v中内核上还有M-Mode
     //  这也是为什么需要SBI
     //  Note: 进S-Mode在实际应该在SBI启动的末尾完成, 我们这里只是初期设计, 放入代办事项
     
-    csrr    a0, mhartid
+    //  设置PMP
+    li      t0, -1          //  0b111...111
+    csrw    pmpaddr0, t0    //  54-63位是WARL, 所以高位随便写(含义见特权手册)
+    
+    li      t0, 0x0f        //  A=0x01 TOR, X=W=R=1
+    csrs    pmpcfg0, t0
+    
+    //  进S-Mode
     li      t0, 0x1 << 11   //  mstatus.MPP = 0b01 S Mode
     csrs    mstatus, t0
 
@@ -42,8 +51,8 @@ entry:
     mret
 
 entry_s_mode:               //  标志着进入了S-Mode
-    //  开始设置satp寄存器
-    la      t0, (V2P_WO(entrypgdir))
+    //  设置页表
+    la      t0, (V2P_WO(entrypgdir))    //  开始设置satp寄存器
     srli    t0, t0, 12      //  右移, 空位填0
 
     li      t1, 0x8 << 60   //  8代表Sv39分页模式
