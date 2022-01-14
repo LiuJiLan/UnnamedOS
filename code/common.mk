@@ -7,7 +7,7 @@ CFLAGS += -mcmodel=medany -mabi=lp64f -march=rv64imafc
 
 QEMU = qemu-system-riscv64
 QFLAGS = -smp 1 -M virt -m 6M -bios none
-#QFLAGS += -nographic
+QFLAGS += -nographic
 
 CC = ${CROSS_COMPILE}gcc
 LD = ${CROSS_COMPILE}ld
