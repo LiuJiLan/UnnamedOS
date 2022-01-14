@@ -59,5 +59,6 @@ https://blog.csdn.net/fuxy3/article/details/104732541
 ## To Do
 * [X] mret问题    entry.S
 * [ ] 实现SBI     entry.S
+* [ ] 要GAS修改那F--king的li和la问题    见kernel README entry.S部分
 
 ## Done
