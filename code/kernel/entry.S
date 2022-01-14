@@ -52,7 +52,24 @@ entry:
 
 entry_s_mode:               //  标志着进入了S-Mode
     //  设置页表
-    la      t0, (V2P_WO(entrypgdir))    //  开始设置satp寄存器
+    //  开始设置satp寄存器
+    
+    //  li      t0, (V2P_WO(entrypgdir))
+    //  用la报offset too large
+    //  用li报illegal operands
+    
+    //  v2p_entrypgdir = V2P_WO(entrypgdir)
+    //  la      t0, v2p_entrypgdir
+    //  elocation truncated to fit: R_RISCV_PCREL_HI20 against symbol `entrypgdir' defined in .data section in main.o
+    //  li      t0, v2p_entrypgdir
+    //  illegal operands
+
+    //  只能自己乖乖算了
+    la      t0, entrypgdir
+    mv      t3, t0
+    li      t1, V_P_DIFF
+    sub     t0, t0, t1
+
     srli    t0, t0, 12      //  右移, 空位填0
 
     li      t1, 0x8 << 60   //  8代表Sv39分页模式

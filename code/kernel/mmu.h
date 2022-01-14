@@ -8,12 +8,15 @@
 #ifndef mmu_h
 #define mmu_h
 
+typedef unsigned long pte_t;
+//xv6在type.h还申明了一个pde_t, 由于risc-v定义的页表含义, 我们称任意级的表项都为pte
+
 //  页表常量
 //  对应xv6中NPDENTRIES、NPTENTRIES、PGSIZE
 #define NPTE1       512     //  Sv39下每级表有2^9项
 #define NPTE2       512
 #define NPTE3       512
-//#define PGSIZE      4096
+#define PGSIZE      4096
 
 //  页表项flag     //  这个写法太不优雅了, 之后考虑用位操作结构体
 #define PTE_V           0x001   // 是否合法

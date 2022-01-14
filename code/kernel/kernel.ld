@@ -6,9 +6,10 @@ BASE_ADDRESS = 0xFFFFFFFFC0200000;
 
 SECTIONS
 {
-    . = BASE_ADDRESS
+    . = BASE_ADDRESS;
     .text : {
         entry.o(.text)
+        main.o(.text)
         *(.text)
     }
 
