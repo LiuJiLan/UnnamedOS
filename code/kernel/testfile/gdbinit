@@ -12,4 +12,6 @@ b*0x80000000
 display/z $t0
 display/z $t1	
 
-
+#x/512zg 0xffffffffc0202000
+#x/512zg 0x80002000
+#x/512zg 0x80001000
