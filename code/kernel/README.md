@@ -33,7 +33,7 @@
 - 所以即使链接脚本用的是**虚拟地址**也会导致加载进去的是**物理地址**
 - 那我们如何加载想要的虚拟地址呢, 说白了加载**绝对地址**就好了
 - 那我们能用li加载立即数的方式加载绝对地址吗?
-- **不能!!!**因为这样会引起```Error: illegal operands```
+- 不能!!! 因为这样会引起```Error: illegal operands```
 - 自此我终于能理解rCore中为什么要以那么诡异的方式加载页表了
 - [以下代码出自rCore教程](https://rcore-os.github.io/rCore-Tutorial-deploy/docs/lab-3/guide/part-2.html)
 ```

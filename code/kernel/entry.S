@@ -27,6 +27,17 @@ entry:
     //  xv6中此处只开启了大页模式, 推测是出于编程简单的原因
     //  在此也暂时保持和xv6保持一致, 暂时只采用一级页表映射
 
+    //  注意大页模式下的一些问题
+    //  之前由于想完全参考rCore, 所以把内核的虚拟地址设置在0xFFFFFFFFC0200000U
+    //  这是一个致命的错误:
+    //  因为我的内核所在的物理地址是0x80000000, 而rCore内核的物理地址是在0x80200000
+    //  (那0x0020_0000用于SBI)
+    //  我试图在大页模式下将0xFFFFFFFFC0200000U映射到0x80000000, 这是无法实现的
+    //  一级大页下的效果的本质是把0xFFFFFFFFC映射到了0x000000008
+    //  后面的部分都是偏移量, 我的错误映射会导致一个0x0020_0000的偏差无法补上
+    //  由于已经有了二周目补SBI的想法, 我们这里就不做复杂的多级映射去补这个0x0020_0000了
+    //  所以将memlayout.h中的KERNBASE做了更改
+
     //  想开页表先进S-Mode
     //  (因为M-Mode下是否使用虚拟地址转换是不确定的)
     //  如果有PMP系统需要先配置, 不然mret之后会有错误
@@ -65,8 +76,18 @@ entry_s_mode:               //  标志着进入了S-Mode
     //  illegal operands
 
     //  只能自己乖乖算了
-    la      t0, entrypgdir
-    mv      t3, t0
+    //  但是也不能用la加载, 也不能用li加载, 详见README
+    //  la      t0, entrypgdir
+    //  li      t1, V_P_DIFF
+    //  sub     t0, t0, t1
+
+    //  这样也会出错
+    //  lui     t0, %hi(V2P_WO(entrypgdir))
+    //  addi    t0, t0, %lo(V2P_WO(entrypgdir))
+
+    lui     t0, %hi(entrypgdir)
+    addi    t0, t0, %lo(entrypgdir)
+    //  注意这个方法加载的其实是符号位扩展的32位地址
     li      t1, V_P_DIFF
     sub     t0, t0, t1
 
@@ -79,9 +100,13 @@ entry_s_mode:               //  标志着进入了S-Mode
     sfence.vma              //  刷新快表
 
     
-    la      sp, stack + KSTACKSIZE  //  "param.h"中指定
+    //  la      sp, stack + KSTACKSIZE  //  "param.h"中指定
+    lui     sp, %hi(stack + KSTACKSIZE)
+    addi    sp, sp, %lo(stack + KSTACKSIZE)
 
-    la      t0, main        //  进kernel的main函数
+    //  la      t0, main        //  进kernel的main函数
+    lui     t0, %hi(main)
+    addi    t0, t0, %lo(main)
     jr      t0
 
 .comm stack, KSTACKSIZE

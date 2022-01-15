@@ -26,11 +26,18 @@ QFLAGS += -device loader,file=./kernel.bin,addr=0x80000000
 
 .PHONY : debug
 debug: all
-	@$(OBJDUMP)  -D -b binary -m riscv kernel.bin > dis.asm
+	@$(OBJDUMP) -D -b binary -m riscv kernel.bin > dis.asm
 	@$(OBJDUMP) -S kernel.elf > kernel.asm
 	@riscv64-unknown-elf-readelf -a -W kernel.elf > kernel.txt
 	@${QEMU} ${QFLAGS} -s -S &
 	@${GDB} kernel.elf -q -x ./testfile/gdbinit
 	
+.PHONY : run
+run: all
+	@riscv64-unknown-elf-readelf -a -W kernel.elf > kernel.txt
+	@${QEMU} ${QFLAGS} -s -S &
+	@${GDB} kernel.elf -q -x ./testfile/gdbinit
+
 clean:
-	rm *.o *.bin *.asm
+	@echo "Check if there is any trush left."
+	@rm *.o *.bin *.asm *.elf 
