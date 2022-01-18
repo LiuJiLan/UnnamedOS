@@ -18,6 +18,10 @@ typedef unsigned long pte_t;
 #define NPTE3       512
 #define PGSIZE      4096
 
+#define PGROUNDUP(sz)  (((sz)+PGSIZE-1) & ~(PGSIZE-1))
+#define PGROUNDDOWN(a) (((a)) & ~(PGSIZE-1))
+//  注意, PGSIZE必须是2的幂(当然肯定是2的幂)
+
 //  页表项flag     //  这个写法太不优雅了, 之后考虑用位操作结构体
 #define PTE_V           0x001   // 是否合法
 #define PTE_R           0x002   // 读

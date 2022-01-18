@@ -5,16 +5,20 @@
 //  Created by LiuJiLan on 2022/1/12.
 //
 
+#include "defs.h"
+#include "memlayout.h"
 #include "mmu.h"
 
-pte_t entrypgdir[];
+extern char end[];   //  链接脚本中提供, 更多详情见README/main.c/引入外部symbol
 
 int main(void) {
+    kinit1((void *)end, (void *)P2V(0x80000000 + 0x200000));    // 见README
+    panic("GOOD!");
     while (1) {
     }
 }
 
-
+pte_t entrypgdir[];
 
 __attribute__((__aligned__(PGSIZE)))
 pte_t entrypgdir[NPTE1] = {
