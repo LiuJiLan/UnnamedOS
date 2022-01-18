@@ -45,6 +45,43 @@
 - 所以我们暂时模仿rCore教程使用`lui t0, %hi(entrypgdir)`和`addi t0, t0, %lo(entrypgdir)`
 - 但请注意这样加载的其实是32位的, 高位扩展的地址
 
+## main.c
+
+### 引入外部symbol
+- `extern char end[];`其实是链接脚本提供的外部symbol
+- 它标示着内核的结束位置
+- 我尝试过声明为`extern void * end;`和`extern char * end;`
+- 但是这都会导致`end`不能被正常引入, 之后应该去看看资料
+- 但照着xv6这样引入反正不会错
+
+### kinit1(end, (void *)P2V(0x80000000 + 0x200000));
+- 我们暂时初始化2MB的空间, xv6只初始化了4MB
+- 注意xv6当中是直接给的4MB的值, 因为认为内存起点在0处
+- 给出4MB的值的原因是, x86大页模式下是4MB的大页
+- 我们用的Sv39其实能给出1GiB的大页, 其实我们一开始就能初始化完全部
+- 我们这里只初始化2MB是为了流一部分空间给给kinit2去实验初始化
+- (如果按通常的设计2MB给SBI, kinit1()给2MB, kinit2()再给2MB)
+- (刚好用完k210的6MB, 尽管有方法可以用到8MB, 但是暂时不去管)
+
+## kalloc.c
+
+### 如果暂时没法完成
+- 在kalloc中我们使用了spinlock, 但是我们暂时还没有写到哪里
+- 事实上在main.c初次用到的kinit1()尽管初始化了lock, 但却没有使用它
+- 我们可以暂时注释掉
+- 我们还用到了console中的panic()函数
+- 不得不说printf("Hello World\n");在写内核的时候是一件大难事
+- panic()也是类似, 所以我只是在panic()中做了一个原地tp
+- 暂时`char * target = s;`, 这样方便去读s的地址然后在gdb查看它
+- 但其实都不需要原地tp, 因为gdb会提供信息, 例如:
+- `Breakpoint 2, panic (s=0xffffffffc0000548 "GOOD!") at console.c:11`
+
+### kfree()里指针的快乐
+- 很多人评价说C语言最痛苦就是指针, 我不这样认为
+- kfree()中`r = (struct run*)v;`将页里的一部分部分直接用来存储指针
+- 这个设计真的令人感到精妙无比
+
+
 # 思考
 
 ## entry.S
@@ -59,3 +96,12 @@
 - rCore的例子中使用了SBI引导启动后处于S态, 我暂时不打算用SBI, 所以要在entry.S中转换成S态
 - **第一个版本我想尽量贴合xv6的思路, 之后版本中会自己去写SBI来补足**
 
+# To Do List
+- 区别于最顶层README的to-do-list, 这里记录一些局部小问题
+
+## To Do
+* [X] mret问题                                entry.S
+* [ ] NULL的问题, 还有部分函数要改得更精细一些     string.c
+* [ ] 去查查有关"引入外部symbol"的资料           main.c
+
+## Done
