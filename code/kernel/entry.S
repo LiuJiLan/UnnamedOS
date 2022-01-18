@@ -22,6 +22,10 @@ _start = V2P_WO(entry)
 //  V2P_WO宏定义在memlayout.h
 //  memlayout.h中的部分变量是暂定的, 并且要和链接脚本相呼应
 
+.globl for_gdb_physical
+for_gdb_physical = V2P_WO(for_gdb_virtual)
+//  自动调试用的, 见for_gdb_virtual
+
 .globl entry
 entry:
     //  xv6中此处只开启了大页模式, 推测是出于编程简单的原因
@@ -61,6 +65,9 @@ entry_s_mode:               //  标志着进入了S-Mode
     csrw    satp, t0        //  启动分页
     sfence.vma              //  刷新快表
 
+for_gdb_virtual:
+    //  由于在没开页表时使用gdb自动设置一些用虚拟地址的symbol会失败
+    //  这里专门给一个点用于调试的到这个点之后就能用虚拟地址的symbol了
     
     //  la      sp, stack + KSTACKSIZE  //  "param.h"中指定
     lui     sp, %hi(stack + KSTACKSIZE)
