@@ -1,17 +1,22 @@
+set disassemble-next-line on
+target remote : 1234
+#b*0x80000000
+
+#有页表才能设后面的断点
+b for_gdb_physical
+c
+
+b main
+#在panic设断点, panic暂未实现, 用于debug
+b panic
+c
+
+
+#display/z $t0
+#display/z $t1
 #display/z $x5
 #display/z $x6
-#display/z $x7	
-
-set disassemble-next-line on
-#b _start
-target remote : 1234
-#c
-b*0x80000000
-
-
-display/z $t0
-display/z $t1	
-
-#x/512zg 0xffffffffc0202000
+#display/z $x7
+#que 0xffffffffc0202000
 #x/512zg 0x80002000
 #x/512zg 0x80001000
