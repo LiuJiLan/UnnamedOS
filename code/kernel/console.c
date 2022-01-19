@@ -8,6 +8,5 @@
 #include "defs.h"
 
 void panic(char *s) {
-    char * target = s;
     //  暂时用来debug, 未实现
 }

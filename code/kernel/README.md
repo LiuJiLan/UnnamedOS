@@ -81,6 +81,12 @@
 - kfree()中`r = (struct run*)v;`将页里的一部分部分直接用来存储指针
 - 这个设计真的令人感到精妙无比
 
+## vm.c
+
+### 如果暂时没法完成
+- 只完成kvmalloc的部分
+- setupkvm()函数中会有freevm(), xv6中在注释中说实在用户部分用的
+- 暂不实现, 暂用`panic("freevm");`代替
 
 # 思考
 
@@ -103,5 +109,8 @@
 * [X] mret问题                                entry.S
 * [ ] NULL的问题, 还有部分函数要改得更精细一些     string.c
 * [ ] 去查查有关"引入外部symbol"的资料           main.c
+* [ ] 关于`pde_t`命名的问题                    main.c vm.c mmu.h type.h
+* [ ] 关于`PTX`命名的问题                      mmu.h type.h
+* [ ] `ptrdiff_t`还是`intptr_t`               vm.c type.h
 
 ## Done

@@ -13,6 +13,7 @@ extern char end[];   //  链接脚本中提供, 更多详情见README/main.c/引
 
 int main(void) {
     kinit1((void *)end, (void *)P2V(0x80000000 + 0x200000));    // 见README
+    kvmalloc();
     panic("GOOD!");
     while (1) {
     }

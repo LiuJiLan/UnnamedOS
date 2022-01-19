@@ -8,6 +8,7 @@ SRCS_C = \
 	string.c \
 	kalloc.c \
 	console.c \
+	vm.c \
 
 OBJS = $(SRCS_ASM:.S=.o)
 OBJS += $(SRCS_C:.c=.o)

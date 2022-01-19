@@ -56,4 +56,9 @@
 #define V2P_WO(x) ((x) - V_P_DIFF)    // same as V2P, but without casts //  不带类型转换
 #define P2V_WO(x) ((x) + V_P_DIFF)    // same as P2V, but without casts
 
+//  IO部分参考qemu
+//  https://github.com/qemu/qemu/blob/master/hw/riscv/virt.c
+
+//  如果是k210参考其SDK的platform.h
+
 #endif /* memlayout_h */
