@@ -11,10 +11,12 @@ static inline void jump_to_kernel(uptr_t kernel_entry);
 
 void sbimain(void) {
     uptr_t kernel_entry;
-    kernel_entry = loader_kernel();
-    if (kernel_entry == 0) {
-        panic("kernel entry wrong!");
-    }
+    //    kernel_entry = loader_kernel();
+    //    if (kernel_entry == 0) {
+    //        panic("kernel entry wrong!");
+    //    }
+    
+    kernel_entry = 0x80200000U;
     jump_to_kernel(kernel_entry);
 }
 

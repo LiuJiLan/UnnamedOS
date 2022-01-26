@@ -14,6 +14,6 @@
 void panic(char * s);
 
 //  loader.c
-uptr_t loader_kernel(void);
+//  uptr_t loader_kernel(void);
 
 #endif /* sbi_defs_h */

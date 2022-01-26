@@ -24,8 +24,9 @@ all: kernel.elf
 
 kernel.elf: ${OBJS}
 	@${CC} ${CFLAGS} -T kernel.ld -o kernel.elf $^
-	@cp kernel.elf ../out/kernel.elf
 	@${OBJCOPY} -O binary kernel.elf kernel.bin
+	@cp kernel.elf ../out/kernel.elf
+	@cp kernel.bin ../out/kernel.bin
 
 %.o : %.c
 	@${CC} ${CFLAGS} -c -o $@ $<
@@ -36,6 +37,7 @@ kernel.elf: ${OBJS}
 %.S : %.py
 	@${PYTHON} $< > $@
 
+QFLAGS += -device loader,file=./testfile/temp_sbi.bin,addr=0x80000000
 QFLAGS += -device loader,file=./kernel.bin,addr=0x80200000
 
 .PHONY : debug

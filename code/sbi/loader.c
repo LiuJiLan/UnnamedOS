@@ -10,14 +10,13 @@
 
 extern char kernel_elf[];   //  跟ld一样只能用这种方式引入
 
-static inline unsigned long get_kernel_elf(void);
+//  static inline unsigned long get_kernel_elf(void);
 void readflash(unsigned char *, unsigned long, unsigned char *);
 void fillzero(unsigned char *, unsigned long);
 
 uptr_t loader_kernel(void) {
     struct elfhdr * elf;
     struct proghdr *ph, *eph;   // 程序头表
-    // void (* entry)(void);
     
     unsigned char * pa;
     
@@ -37,10 +36,6 @@ uptr_t loader_kernel(void) {
         }
     }
     
-    //  panic("FUCK");
-    
-    //  entry = (void(*)(void))(elf->entry);
-    //  entry();
     return elf->entry;
 }
 
