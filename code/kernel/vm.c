@@ -68,8 +68,8 @@ static pte_t * walkpgdir(pte_t *pgdir, const void *va, int alloc)
     return &pgdir_L0[PT_L0_SHIFT(va)];
 }
 
-static int mappages(pte_t *pgdir, void *va, uintptr_t size,
-                    uintptr_t pa, int perm) {   //  不明确为何此处使用了static
+static int mappages(pte_t *pgdir, void *va, uptr_t size,
+                    uptr_t pa, int perm) {   //  不明确为何此处使用了static
     char *a, *last;
     pte_t * pte;
     
@@ -126,7 +126,7 @@ pte_t * setupkvm(void) {
     for (k = kmap; k < &kmap[NELEM(kmap)]; k++) {
         //&kmap[NELEM(kmap)]这个写法其实是越界了, 以后还是改成指针+偏移量的好
         if (mappages(pgdir, k->virt, k->phys_end - k->phys_start,
-                     (uintptr_t)k->phys_start, k->perm) < 0) {
+                     (uptr_t)k->phys_start, k->perm) < 0) {
             // freevm(pgdir);
             panic("freevm");
             return 0;

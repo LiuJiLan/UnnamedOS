@@ -1,14 +1,13 @@
 //
-//  type.h
+//  sbi_type.h
 //  xv6-qemu
 //
-//  Created by LiuJiLan on 2022/1/19.
+//  Created by 刘冬辰 on 2022/1/22.
 //
 
-#ifndef type_h
-#define type_h
+#ifndef sbi_type_h
+#define sbi_type_h
 
-//  平台字长无关
 typedef char                int8;
 typedef unsigned char       uint8;
 typedef short               int16;
@@ -24,4 +23,4 @@ typedef unsigned long       uptr_t;
 
 typedef uptr_t           pte_t;
 
-#endif /* type_h */
+#endif /* sbi_type_h */

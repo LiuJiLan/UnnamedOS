@@ -16,6 +16,8 @@
 //  entry使用的是链接脚本中的虚拟地址
 //  所以链接脚本中入口被设为_start, 而后续的摆放则是由虚拟地址开始摆放
 
+.text
+
 .globl _start
 _start = V2P_WO(entry)
 
@@ -30,24 +32,7 @@ for_gdb_physical = V2P_WO(for_gdb_virtual)
 entry:
     //  xv6中此处只开启了大页模式, 推测是出于编程简单的原因
     //  在此也暂时保持和xv6保持一致, 暂时只采用一级页表映射
-    
-    //  设置PMP
-    li      t0, -1          //  0b111...111
-    csrw    pmpaddr0, t0    //  54-63位是WARL, 所以高位随便写(含义见特权手册)
-    
-    li      t0, 0x0f        //  A=0x01 TOR, X=W=R=1
-    csrs    pmpcfg0, t0
-    
-    //  进S-Mode
-    li      t0, 0x1 << 11   //  mstatus.MPP = 0b01 S Mode
-    csrs    mstatus, t0
 
-    la      t0, entry_s_mode
-    csrw    mepc, t0        //  为什么这么做参考手册中mret指令
-
-    mret
-
-entry_s_mode:               //  标志着进入了S-Mode
     //  设置页表
     //  开始设置satp寄存器
 

@@ -11,7 +11,7 @@
 //  一开始设的值是0x80000000 + ????, 然后一直找不到值
 //  突然想起来最高位是1, 有可能做了符号扩展, 所以要标明是U
 
-#include "elf.h"
+#include "../common/elf.h"
 
 void readflash(unsigned char *, unsigned long, unsigned char *);
 //  模仿readseg函数

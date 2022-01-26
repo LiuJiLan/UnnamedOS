@@ -1,23 +1,30 @@
-include ../common.mk
+include ../common/common.mk
 
-SRCS_ASM = \
+KERNEL_ASM = \
 	entry.S \
 
-SRCS_C = \
+KERNEL_C = \
 	main.c \
 	string.c \
 	kalloc.c \
 	console.c \
 	vm.c \
+	
+KERNEL_PY = \
+	test.py \
 
-OBJS = $(SRCS_ASM:.S=.o)
-OBJS += $(SRCS_C:.c=.o)
+OBJS = $(KERNEL_ASM:.S=.o)
+OBJS += $(KERNEL_C:.c=.o)
+OBJS += $(KERNEL_PY:.py=.o)
+
+TRUSHS = $(KERNEL_PY:.py=.S)
 
 .DEFAULT_GOAL := all
 all: kernel.elf
 
 kernel.elf: ${OBJS}
 	@${CC} ${CFLAGS} -T kernel.ld -o kernel.elf $^
+	@cp kernel.elf ../out/kernel.elf
 	@${OBJCOPY} -O binary kernel.elf kernel.bin
 
 %.o : %.c
@@ -25,8 +32,11 @@ kernel.elf: ${OBJS}
 
 %.o : %.S
 	@${CC} ${CFLAGS} -c -o $@ $<
+	
+%.S : %.py
+	@${PYTHON} $< > $@
 
-QFLAGS += -device loader,file=./kernel.bin,addr=0x80000000
+QFLAGS += -device loader,file=./kernel.bin,addr=0x80200000
 
 .PHONY : debug
 debug: all
@@ -44,4 +54,4 @@ run: all
 
 clean:
 	@echo "Check if there is any trush left."
-	@rm *.o *.bin *.asm *.elf *.txt
+	@rm *.o *.bin *.asm *.elf *.txt $(TRUSHS)

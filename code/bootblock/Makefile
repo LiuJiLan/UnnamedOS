@@ -1,4 +1,4 @@
-include ../common.mk
+include ../common/common.mk
 
 bootblock: bootasm.S bootmain.c
 	$(CC) $(CFLAG) -c bootmain.c

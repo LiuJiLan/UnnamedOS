@@ -1,8 +1,5 @@
-
 OUTPUT_ARCH( "riscv" )
-
 ENTRY(start)
-
 
 MEMORY
 {

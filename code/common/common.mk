@@ -14,4 +14,6 @@ LD = ${CROSS_COMPILE}ld
 OBJCOPY = ${CROSS_COMPILE}objcopy
 OBJDUMP = ${CROSS_COMPILE}objdump
 
+PYTHON = python3
+
 GDB = gdb-multiarch
