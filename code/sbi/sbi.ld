@@ -9,6 +9,7 @@ SECTIONS
     . = BASE_ADDRESS;
     .text : AT(0x80000000) {
         sbi_asm.o(.text)
+        sbi_trap_handler.o(.text)
         sbi_main.o(.text)
         *(.text)
     }
@@ -18,12 +19,13 @@ SECTIONS
     }
     
     .data : {
-        . = ALIGN(4096);
         *(.data)
     }
 
     .bss :{
             *(.bss)
     }
+    
+    PROVIDE(sbi_end = .);
 }
 

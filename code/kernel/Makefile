@@ -9,6 +9,7 @@ KERNEL_C = \
 	kalloc.c \
 	console.c \
 	vm.c \
+	sbi.c \
 	
 KERNEL_PY = \
 	test.py \
@@ -56,4 +57,5 @@ run: all
 
 clean:
 	@echo "Check if there is any trush left."
+	@echo "Remember to delete the files in ../out ."
 	@rm *.o *.bin *.asm *.elf *.txt $(TRUSHS)

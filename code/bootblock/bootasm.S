@@ -20,7 +20,7 @@ start:
     li      sp, BOOT_STACK_TOP
     //xv6中将栈顶指向了0x7c00, 用前面的内存空间做栈
     //在u-boot/include/configs/sipeed-maix.h中CONFIG_SYS_INIT_SP_ADDR = 0x803FFFFF
-    //并将这个值与上-16进行16byte对齐, 最终得到0x803ffff0
+    //并将这个值与上-16进行4对齐, 最终得到0x803ffff0
     call    bootmain
 
     //bootmain理应不返回

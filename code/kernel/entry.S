@@ -18,17 +18,17 @@
 
 .text
 
-.globl _start
+.global _start
 _start = V2P_WO(entry)
 
 //  V2P_WO宏定义在memlayout.h
 //  memlayout.h中的部分变量是暂定的, 并且要和链接脚本相呼应
 
-.globl for_gdb_physical
+.global for_gdb_physical
 for_gdb_physical = V2P_WO(for_gdb_virtual)
 //  自动调试用的, 见for_gdb_virtual
 
-.globl entry
+.global entry
 entry:
     //  xv6中此处只开启了大页模式, 推测是出于编程简单的原因
     //  在此也暂时保持和xv6保持一致, 暂时只采用一级页表映射

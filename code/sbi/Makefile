@@ -2,10 +2,13 @@ include ../common/common.mk
 
 KERNEL_ASM = \
 	sbi_asm.S \
+	sbi_trap_handler.S \
 
 KERNEL_C = \
 	sbi_main.c \
+	sbi_trap.c \
 	#loader.c \
+
 	
 KERNEL_PY = \
 	#kernel_elf.py \
@@ -56,9 +59,9 @@ debug: all  kernel
 run: all
 	@riscv64-unknown-elf-readelf -a -W sbi.elf > sbi.txt
 	@${QEMU} ${QFLAGS} -s -S &
-	@${GDB} sbi.elf -q -x ./testfile/gdbinit
+	@${GDB} sbi.elf ../out/kernel.elf -q -x ./testfile/gdbinit
 
 clean:
 	@rm *.o *.bin *.asm *.elf *.txt $(TRUSHS)
-	@#cd ../kernel; make clean
+	@cd ../kernel; make clean
 

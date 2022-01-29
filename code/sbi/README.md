@@ -52,3 +52,5 @@ and     sp, sp, t2
 xor     t2, t2, t1
 xor     sp, t1, sp      //  神奇的位运算, 结束后能保持t1和t2不变
 ```
+## sbi_trap
+- 参考了openSBI
