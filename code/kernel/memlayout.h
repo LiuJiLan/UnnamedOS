@@ -31,21 +31,17 @@
 //#define KERNLINK (KERNBASE+EXTMEM)  // Address where kernel is linked
 
 //  命名暂时与xv6保持一致, 之后再换名字
-#define EXTMEM  0x80000000U
-//  rCore把它放在了0x80200000
-//  巧合的是我们内核所在的物理地址跟xv6中的虚拟地址竟是一个值, 时代在进步
+#define EXTMEM  0x80200000U
 #define PHYSTOP 0x80600000U
 //  xv6中没有做内存探测, 内存的上限是通过这个值指定的
 //  我们在二周目可以用dtb探测出的内存值给他给予设定
 //  由于k210的一些设定, 我们还是将内存大小设为6M
 
 //  #define KERNBASE 0xFFFFFFFFC0200000U    //  参考rCore
-//  暂改为0xFFFFFFFFC0000000U, 原因见entry.S大页有关部分
-#define KERNBASE 0xFFFFFFFFC0000000U
+#define KERNBASE 0xFFFFFFFFC0200000U
 #define KERNLINK KERNBASE               //  注意链接脚本要和这里的值一致
 
-//  #define V_P_DIFF 0xFFFFFFFF40200000U
-#define V_P_DIFF 0xFFFFFFFF40000000U    //  由于KERNBASE的改变我们也暂改
+#define V_P_DIFF 0xFFFFFFFF40000000U
 //  xv6中由于设计上的巧合导致虚拟内存和物理内存的差值正好是KERNBASE
 //  我们这里额外定义一个虚拟内存和物理内存的差值, 通过KERNBASE-EXTMEM得出
 

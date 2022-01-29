@@ -13,15 +13,17 @@
 extern char end[];   //  链接脚本中提供, 更多详情见README/main.c/引入外部symbol
 
 int main(void) {
-    //kinit1((void *)end, (void *)P2V(0x80000000 + 0x200000));    // 见README
-    //kvmalloc();
+    kinit1((void *)end, (void *)P2V(0x80200000 + 0x200000));    // 见README
+    panic("kinit1");
+    kvmalloc();
     panic("SBI");
     struct sbiret test;
     test = sbi_ecall(0x1919, 0x810);
     if (test.error == 0x114 && test.value == 0x514) {
         panic("GOOD!");
+    } else {
+        panic("NO GOOD!");
     }
-    panic("NO GOOD!");
     while (1) {
     }
 }
