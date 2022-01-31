@@ -42,6 +42,7 @@ struct sbi_trap_regs {
     unsigned long t6;
     unsigned long mepc;
     unsigned long mstatus;
+    unsigned long mcause;
 };
 
 struct sbi_trap_info {
@@ -53,5 +54,29 @@ struct sbi_trap_info {
 };
 
 struct sbi_trap_regs * sbi_trap_handler(struct sbi_trap_regs * regs);
+
+#define Supervisor_Software_Interrupt       1
+#define Machine_Software_Interrupt          3
+#define Supervisor_Timer_Interrupt          5
+#define Machine_Timer_Interrupt             7
+#define Supervisor_External_Interrupt       9
+#define Machine_External_Interrupt          11
+
+#define Instruction_Address_Misaligned      0
+#define Instruction_Access_Fault            1
+#define Illegal_Instruction                 2
+#define Breakpoint                          3
+#define Load_Address_Aisaligned             4
+#define Load_Access_Fault                   5
+#define Store_AMO_Address_Misaligned        6
+#define Store_AMO_Access_Fault              7
+#define Environment_Call_From_U_mode        8
+#define Environment_Call_From_S_mode        9
+#define Environment_Call_From_M_mode        11
+#define Instruction_Page_Fault              12
+#define Load_Page_Fault                     13
+#define Store_AMO_Page_Fault                15
+
+
 
 #endif /* sbi_trap_h */

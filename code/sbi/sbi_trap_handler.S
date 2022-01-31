@@ -68,7 +68,7 @@
 .macro  SAVE_MEPC_MSTATUS
     csrr    t0, mepc
     REG_S   t0, 31*REGBYTES(sp)
-    csrr    t0, mcause
+    csrr    t0, mstatus
     REG_S   t0, 32*REGBYTES(sp)
 .endm
 
@@ -112,12 +112,24 @@
     REG_L   t0, 31*REGBYTES(a0)
     csrw    mepc, t0
     REG_L   t0, 32*REGBYTES(a0)
-    csrw    mcause, t0
+    csrw    mstatus, t0
 .endm
 
 .macro TRAP_RESTORE_A0_T0
     REG_L    t0, 4*REGBYTES(a0)
     REG_L    a0, 9*REGBYTES(a0)
+.endm
+
+
+//  由于这两个部分没有参考openSBI, 有一些担心, 单独拿出来
+.macro  SAVE_MCAUSE
+    csrr    t0, mcause
+    REG_S   t0, 33*REGBYTES(sp)
+.endm
+
+.macro  RESTORE_MCAUSE
+    REG_L   t0, 33*REGBYTES(a0)
+    csrw    mcause, t0
 .endm
 
 .text
@@ -130,6 +142,8 @@ trap_vector:
 
     SAVE_MEPC_MSTATUS
 
+    SAVE_MCAUSE
+
     mv      a0, sp
     call    sbi_trap_handler
 
@@ -137,6 +151,8 @@ trap_exit:
     RESTORE_GENERAL_REGS_EXCEPT_A0_T0
 
     RESTORE_MEPC_MSTATUS
+
+    RESTORE_MCAUSE
 
     TRAP_RESTORE_A0_T0
 

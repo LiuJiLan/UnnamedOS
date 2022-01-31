@@ -21,6 +21,6 @@ typedef unsigned long long  uint64;
 typedef long                ptr_t;
 typedef unsigned long       uptr_t;
 
-typedef uptr_t           pte_t;
+typedef unsigned long       regs_t;
 
 #endif /* sbi_type_h */

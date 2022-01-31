@@ -10,7 +10,11 @@
 
 #define MSCRATCH_TEMP_NUM 2
 
-#define SBI_TRAP_REGS_SIZE 33 // 除去zero的31个通用寄存器 + mepc + mstatus
+#define SBI_TRAP_REGS_SIZE 34
+//  除去zero的31个通用寄存器 + mepc + mstatus + mcause
+//  不知为何openSBI将32个通用寄存器全部给存了, 但没有存mcause
+//  为了我自己方便我选择还是存mcause
+
 
 #define SBI_STACK_SIZE 1024
 
