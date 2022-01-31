@@ -22,6 +22,8 @@ typedef unsigned long long  uint64;
 typedef long                ptr_t;
 typedef unsigned long       uptr_t;
 
+typedef unsigned long       regs_t;
+
 typedef uptr_t           pte_t;
 
 #endif /* type_h */
