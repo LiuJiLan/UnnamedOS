@@ -7,6 +7,9 @@ KERNEL_ASM = \
 KERNEL_C = \
 	sbi_main.c \
 	sbi_trap.c \
+	sbi_ecall.c \
+	sbi_ecall_base.c \
+	sbi_ecall_legacy.c \
 	#loader.c \
 
 	
