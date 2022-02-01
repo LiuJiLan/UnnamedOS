@@ -27,3 +27,5 @@ display/z $mstatus
 display/z $mie
 display/z $mip
 display/z $mtvec
+
+b testfunc

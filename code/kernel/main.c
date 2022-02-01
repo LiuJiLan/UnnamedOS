@@ -10,6 +10,10 @@
 #include "mmu.h"
 #include "sbi.h"
 
+testfunc(regs_t a1, regs_t a2) {
+    
+}
+
 extern char end[];   //  链接脚本中提供, 更多详情见README/main.c/引入外部symbol
 
 int main(void) {
@@ -18,12 +22,20 @@ int main(void) {
     kvmalloc();
     panic("SBI");
     struct sbiret test;
-    test = sbi_ecall(0x1919, 0x810);
-    if (test.error == 0x114 && test.value == 0x514) {
-        panic("GOOD!");
-    } else {
-        panic("NO GOOD!");
-    }
+    test = sbi_get_sbi_spec_version();
+    testfunc(test.error, test.value);
+    test = sbi_get_sbi_impl_id();
+    testfunc(test.error, test.value);
+    test = sbi_get_sbi_impl_version();
+    testfunc(test.error, test.value);
+    test = sbi_probe_extension(0x7);
+    testfunc(test.error, test.value);
+    test = sbi_get_mvendorid();
+    testfunc(test.error, test.value);
+    test = sbi_get_marchid();
+    testfunc(test.error, test.value);
+    test = sbi_get_mimpid();
+    testfunc(test.error, test.value);
     while (1) {
     }
 }

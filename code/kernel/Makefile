@@ -38,7 +38,7 @@ kernel.elf: ${OBJS}
 %.S : %.py
 	@${PYTHON} $< > $@
 
-QFLAGS += -device loader,file=./testfile/temp_sbi.bin,addr=0x80000000
+QFLAGS += -device loader,file=../out/sbi.bin,addr=0x80000000
 QFLAGS += -device loader,file=./kernel.bin,addr=0x80200000
 
 .PHONY : debug
