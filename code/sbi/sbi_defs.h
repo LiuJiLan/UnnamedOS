@@ -10,6 +10,8 @@
 
 #include "sbi_type.h"
 
+regs_t get_mhartid(void);
+
 //  temp
 void panic(char * s);
 

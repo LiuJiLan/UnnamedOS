@@ -83,10 +83,28 @@ li    x31 , 31
     
     call    sbimain
 
-spin:
+spin:   //  这个spin是给sbimain失败时用的, 当然不应该发生这种事
     j       spin
 
 not_start_hart:
+    mv      a0, tp          //  存a0(其实细想不用存)
+    
+    //  开软中断
+    li      t0, 0x1 << 3
+    csrs    mie, t0
+    
+    j       wfi_spin
+
+wfi_spin:
     wfi
-    //暂未实现, 根据手册wfi后应跟随一定的判断, 等待ipi的唤醒
-    j       not_start_hart
+    //nop
+    csrr    t0, mip
+    li      t1, 0x1 << 3    //  检查是否是ipi
+
+    and     t0, t0, t1
+    bnez    t0, test
+    j       wfi_spin
+
+test:
+    csrc    mip, t1     //  清除软中断
+    call    other

@@ -17,6 +17,7 @@ struct sbi_trap_regs * sbi_trap_handler(struct sbi_trap_regs * regs) {
         switch (mcause) {
             case Machine_Software_Interrupt:
                 //  这里留一个例子
+                //  正好我们也需要处理ipi
                 break;
                 
             default:

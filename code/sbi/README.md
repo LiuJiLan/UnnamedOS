@@ -52,5 +52,24 @@ and     sp, sp, t2
 xor     t2, t2, t1
 xor     sp, t1, sp      //  神奇的位运算, 结束后能保持t1和t2不变
 ```
+
 ## sbi_trap
 - 参考了openSBI
+
+## IPI与CLINT
+
+### 通过内存映射访问CLINT
+- 注意在访问的时候需要选择正确的数据长度
+- 否则会出现Store/AMO access fault
+- 例如不能声明为unsigned char, 要按照手册的4Bytes来
+- (尽管本质上只用向内存写入一个bit)
+
+### wfi与唤醒
+- 根据手册, wfi不受部分中断设置的影响
+- 具体而言:
+- 1、即使mstatus中的mie位的设为屏蔽中断, wfi仍会被中断唤醒
+- 2、在mie中屏蔽过的中断不会唤醒wfi状态的hart
+
+
+
+

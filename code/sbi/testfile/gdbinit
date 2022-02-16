@@ -3,6 +3,7 @@ target remote : 1234
 
 #b*0x1000
 b*0x80000000
+b*0x80200000
 #c
 
 #有页表才能设后面的断点
@@ -11,9 +12,9 @@ b*0x80000000
 
 #b main
 #在panic设断点, panic暂未实现, 用于debug
-b panic
+#b panic
 b trap_vector
-b sbi_trap_handler
+#b sbi_trap_handler
 #c
 
 #display/z $mepc
@@ -32,13 +33,13 @@ b sbi_trap_handler
 #display/z $a5
 #display/z $sp
 
-#display/z $mcause
+display/z $mcause
 #display/z $mstatus
 #display/z $mtvec
 #display/z $mepc
 #display/z $sp
 
-display/z $a0
-display/z $a1
+#display/z $a0
+#display/z $a1
 
 #x/34zg 0x80000550
