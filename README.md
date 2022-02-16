@@ -57,7 +57,16 @@ https://blog.csdn.net/fuxy3/article/details/104732541
 # 3.To Do List
 
 ## To Do
-* [ ] 实现SBI     entry.S
-* [ ] 要GAS修改那F--king的li和la问题    见kernel README entry.S部分
+* [ ] 实现SBI         entry.S
+* [ ] li和la问题       见kernel README entry.S部分
 
 ## Done
+
+
+# 4.Note
+
+## qemu -m 参数
+
+- 手头版本使用`-m 6M`参数会导致dtb的地址为0x8000_0000, 
+- 取消此参数dtb的地址将会是默认值0x8700_0000
+- 固我们暂时删除了这个参数
