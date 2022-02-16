@@ -12,13 +12,17 @@
 .text
 .global start
 start:
+
+#define DEBUG
+#ifdef DEBUG
 li    x5 , 5
 li    x6 , 6
 li    x7 , 7
 li    x8 , 8
 li    x9 , 9
-li    x10 , 10
-li    x11 , 11
+//  a0和a1用来传导参数
+//li    x10 , 10
+//li    x11 , 11
 li    x12 , 12
 li    x13 , 13
 li    x14 , 14
@@ -39,9 +43,19 @@ li    x28 , 28
 li    x29 , 29
 li    x30 , 30
 li    x31 , 31
-
+#endif
+    //  一般会传入些值, a0是hart id, a1是dtb的地址
+    //  我们在此处重新读一次hart id到t0
     csrr    a0, mhartid // 获取hart id
     mv      tp, a0
+    mv      s1, a1
+    //  我们转存的位置模仿于u-boot
+    //  gp和tp在资料中说的作用是编译器松弛,
+    //  暂不清楚随意设置tp会不会造成某些后果
+    //  (u-boot随后做了设置, 我们在用完后打算直接清零)
+    //  a1存s1而不是s0主要是考虑到s0同时兼顾fp的作用(暂时不知道干嘛的)
+    //  而s1又是ABI中随后一个由callee保存的寄存器(C语言会帮我们保护)
+
     csrw    mie, zero   // 关中断
 
     la      t0, trap_vector
@@ -60,8 +74,12 @@ li    x31 , 31
     csrw    mscratch, t0
     
     bnez    tp, not_start_hart
+    
+    mv      a0, tp
+    mv      tp, zero        //  之前说的, 清空tp, 等到我搞懂它干什么用的再说
 
-    ecall
+    mv      a1, s1
+    //  准备传参
     
     call    sbimain
 

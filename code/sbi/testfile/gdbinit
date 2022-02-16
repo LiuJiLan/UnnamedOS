@@ -1,8 +1,9 @@
 set disassemble-next-line on
 target remote : 1234
 
+#b*0x1000
 b*0x80000000
-c
+#c
 
 #有页表才能设后面的断点
 #b for_gdb_physical
@@ -31,10 +32,13 @@ b sbi_trap_handler
 #display/z $a5
 #display/z $sp
 
-display/z $mcause
-display/z $mstatus
-display/z $mtvec
-display/z $mepc
-display/z $sp
+#display/z $mcause
+#display/z $mstatus
+#display/z $mtvec
+#display/z $mepc
+#display/z $sp
+
+display/z $a0
+display/z $a1
 
 #x/34zg 0x80000550

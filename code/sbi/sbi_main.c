@@ -6,21 +6,25 @@
 //
 
 #include "sbi_defs.h"
+#include "sbi_console.h"
 
-static inline void jump_to_kernel(uptr_t kernel_entry);
+static inline void jump_to_kernel(uptr_t kernel_entry,\
+                                  regs_t hart_id, uptr_t dtb_addr);
 
-void sbimain(void) {
+void sbimain(regs_t hart_id, uptr_t dtb_addr) {
     uptr_t kernel_entry;
     //    kernel_entry = loader_kernel();
     //    if (kernel_entry == 0) {
     //        panic("kernel entry wrong!");
     //    }
     
+    console_init();
+    
     kernel_entry = 0x80200000U;
-    jump_to_kernel(kernel_entry);
+    jump_to_kernel(kernel_entry, hart_id, dtb_addr);
 }
 
-static inline void jump_to_kernel(uptr_t kernel_entry) {
+static inline void jump_to_kernel(uptr_t kernel_entry, regs_t hart_id, uptr_t dtb_addr) {
     asm volatile(//  设置PMP
                  "li      t0, -1;"          //  0b111...111
                  "csrw    pmpaddr0, t0;"    //  54-63位是WARL, 所以高位随便写(含义见特权手册)
@@ -34,11 +38,14 @@ static inline void jump_to_kernel(uptr_t kernel_entry) {
 
                  "mv      t0, %0;"
                  "csrw    mepc, t0;"        //  为什么这么做参考手册中mret指令
+                 
+                 "mv      a0, %1;"
+                 "mv      a1, %2;"
 
                  "mret;"
                  ://    无输出
-                 :"r"(kernel_entry)
-                 :"t0");
+                 :"r"(kernel_entry), "r"(hart_id), "r"(dtb_addr)
+                 :"t0", "a0", "a1");
 }
 
 void panic(char * s) {

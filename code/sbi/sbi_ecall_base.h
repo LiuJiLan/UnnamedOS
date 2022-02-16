@@ -10,7 +10,7 @@
 
 #include "sbi_ecall.h"
 
-int sbi_ecall_base_handler(regs_t EID, regs_t FID, long * error, long * value,\
+int sbi_ecall_base_handler(regs_t FID, long * error, long * value,\
                            struct sbi_trap_regs * regs);
 
 #define SBI_GET_SBI_SPEC_VERSION    0

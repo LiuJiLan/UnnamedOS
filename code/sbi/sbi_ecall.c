@@ -30,11 +30,11 @@ int sbi_ecall_handler(struct sbi_trap_regs * regs) {
         case Remote_SFENCE_VMA:
         case Remote_SFENCE_VMA_with_ASID:
         case System_Shutdown:
-            ret = sbi_ecall_legacy_handler(EID, sbiret_error, sbiret_value);
+            ret = sbi_ecall_legacy_handler(EID, sbiret_error, sbiret_value, regs);
             break;
             
         case Base_Extension:
-            ret = sbi_ecall_base_handler(EID, FID, sbiret_error, sbiret_value, regs);
+            ret = sbi_ecall_base_handler(FID, sbiret_error, sbiret_value, regs);
             break;
             
         case Timer_Extension:

@@ -15,7 +15,7 @@ long sbi_get_mvendorid(void);
 long sbi_get_marchid(void);
 long sbi_get_mimpid(void);
 
-int sbi_ecall_base_handler(regs_t EID, regs_t FID, long * error, long * value,\
+int sbi_ecall_base_handler(regs_t FID, long * error, long * value,\
                            struct sbi_trap_regs * regs) {
     *error = SBI_SUCCESS;
     switch (FID) {

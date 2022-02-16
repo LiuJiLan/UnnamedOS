@@ -10,6 +10,7 @@ KERNEL_C = \
 	sbi_ecall.c \
 	sbi_ecall_base.c \
 	sbi_ecall_legacy.c \
+	sbi_console.c \
 	#loader.c \
 
 	
