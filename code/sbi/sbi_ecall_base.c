@@ -17,7 +17,8 @@ long sbi_get_mimpid(void);
 
 int sbi_ecall_base_handler(regs_t FID, long * error, long * value,\
                            struct sbi_trap_regs * regs) {
-    *error = SBI_SUCCESS;
+    //  *error = SBI_SUCCESS;
+    //  注意error是引用的regs->a0, 不能提前赋值
     switch (FID) {
         case SBI_GET_SBI_SPEC_VERSION:
             *value = sbi_get_sbi_spec_version();
@@ -50,6 +51,9 @@ int sbi_ecall_base_handler(regs_t FID, long * error, long * value,\
         default:
             break;
     }
+    
+    *error = SBI_SUCCESS;
+    
     return 0;
 }
 
@@ -68,10 +72,18 @@ long sbi_get_sbi_impl_version(void) {
 long sbi_probe_extension(regs_t EID) {
     switch (EID) {
         case Set_Timer:
+            return 0;
+            
         case Console_Putchar:
         case Console_Getchar:
+            return EID;
+            
         case Clear_IPI:
+            return 0;
+            
         case Send_IPI:
+            return EID;
+            
         case Remote_FENCE_I:
         case Remote_SFENCE_VMA:
         case Remote_SFENCE_VMA_with_ASID:

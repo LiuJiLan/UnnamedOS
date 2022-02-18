@@ -14,6 +14,9 @@
 int sbi_ecall_handler(struct sbi_trap_regs * regs);
 //  返回值非0代表有问题
 
+int count_hart_mask(unsigned long hart_mask);
+//  用于hart_mask的计算
+
 //  EID部分
 #define Base_Extension                          0x10
 #define Set_Timer                               0x00

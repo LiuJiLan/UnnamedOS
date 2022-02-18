@@ -31,16 +31,6 @@ void sbimain(regs_t hart_id, uptr_t dtb_addr) {
     console_putchar = &uart_putc;
     console_getchar = &uart_getc;
     
-    //panic("Panic test.\n");
-    
-    test_ipi();
-    
-    int count = 300;
-    while (count--) {
-        //  临时放置, 用于等待其他核的ipi后续
-        uart_putc('.');
-    }
-    
     kernel_entry = 0x80200000U;
     jump_to_kernel(kernel_entry, hart_id, dtb_addr);
 }
@@ -77,6 +67,9 @@ void panic(char * s) {
 }
 
 void other(regs_t hart_id, uptr_t dtb_addr) {
+    //  用于测试其他的核
+    //  注意这样用uart_putc其实没有考虑到调用uart的临界区
+    //  之后应该使用锁
     char ch = get_mhartid() + '0';
     panic("\nWake Up is Good!\nThe ");
     uart_putc(ch);

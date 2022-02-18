@@ -7,7 +7,7 @@
 
 #include "uart.h"
 
-// 暂时使用的RVOS的代码
+// 暂时抄袭的RVOS的代码
 
 #define UART0 0x10000000L
 

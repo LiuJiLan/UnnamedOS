@@ -12,6 +12,7 @@ KERNEL_C = \
 	sbi_ecall_legacy.c \
 	sbi_console.c \
 	uart.c \
+	clint.c \
 	#loader.c \
 
 	

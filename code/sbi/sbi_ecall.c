@@ -52,3 +52,19 @@ int sbi_ecall_handler(struct sbi_trap_regs * regs) {
     
     return ret;
 }
+
+//  目标hart的计算方法
+//  (设置"hart_mask can be ignored and all
+//  available harts must be considered"的情况除外)
+//  目标hart = hart_mask的位(最低位是0位) + hart_mask_base
+//  对于hart_mask, 例如, 0xb1是0, 0b10是1
+//  对于hart_mask_base, 例如, 0是0, 1是1, 2是2
+
+int count_hart_mask(unsigned long hart_mask) {
+    int count = -1;
+    while (hart_mask) {
+        hart_mask = hart_mask >> 1;
+        count++;
+    }
+    return count;
+}
