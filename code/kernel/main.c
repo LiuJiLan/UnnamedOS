@@ -21,21 +21,23 @@ int main(void) {
     panic("kinit1");
     kvmalloc();
     panic("SBI");
+    
     struct sbiret test;
-    test = sbi_get_sbi_spec_version();
-    testfunc(test.error, test.value);
-    test = sbi_get_sbi_impl_id();
-    testfunc(test.error, test.value);
-    test = sbi_get_sbi_impl_version();
-    testfunc(test.error, test.value);
-    test = sbi_probe_extension(0x7);
-    testfunc(test.error, test.value);
-    test = sbi_get_mvendorid();
-    testfunc(test.error, test.value);
-    test = sbi_get_marchid();
-    testfunc(test.error, test.value);
-    test = sbi_get_mimpid();
-    testfunc(test.error, test.value);
+    
+    //void sbi_set_timer(uint64_t stime_value);
+    sbi_console_putchar('X');
+    panic("putchar");
+    //test.value = sbi_console_getchar();
+    //sbi_console_putchar(test.value);
+    unsigned long hart_mask_num = 0b10;
+    sbi_send_ipi(V2P(&hart_mask_num));
+    //  临时改成传值, 用于排除物理地址的错误
+    int count = 300;
+    while (count--) {
+        //
+    }
+    panic("ipi");
+
     while (1) {
     }
 }
