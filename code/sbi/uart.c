@@ -66,11 +66,14 @@ void uart_puts(char *s)
 
 int uart_getc(void)
 {
-    if (uart_read_reg(LSR) & LSR_RX_READY){
-        return uart_read_reg(RHR);
-    } else {
-        return -1;
-    }
+//    if (uart_read_reg(LSR) & LSR_RX_READY){
+//        return uart_read_reg(RHR);
+//    } else {
+//        return -1;
+//    }
+    //  由于我们没有开启中断, 只能不停的轮询直到有输入
+    while ((uart_read_reg(LSR) & LSR_RX_READY) == 0);
+    return uart_read_reg(RHR);
 }
 
 void uart_isr(void)

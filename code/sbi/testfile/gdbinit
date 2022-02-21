@@ -12,7 +12,7 @@ b*0x80200000
 
 #b main
 #在panic设断点, panic暂未实现, 用于debug
-#b panic
+b panic
 b trap_vector
 #b sbi_trap_handler
 #c
@@ -34,6 +34,8 @@ b trap_vector
 #display/z $sp
 
 display/z $mcause
+display/z $sip
+display/z $mip
 #display/z $mstatus
 #display/z $mtvec
 #display/z $mepc

@@ -10,8 +10,21 @@
 #include "mmu.h"
 #include "sbi.h"
 
-testfunc(regs_t a1, regs_t a2) {
+void testfunc(regs_t a1, regs_t a2) {
     
+}
+
+int have_sip_stip(void) {
+    regs_t sip = 0;
+    asm volatile("csrr  %0, sip;"
+                 :"=r"(sip)
+                 :
+                 :);
+    if (sip & 0x20U) {
+        return  1;
+    } else {
+        return 0;
+    }
 }
 
 extern char end[];   //  链接脚本中提供, 更多详情见README/main.c/引入外部symbol
@@ -24,20 +37,16 @@ int main(void) {
     
     struct sbiret test;
     
-    //void sbi_set_timer(uint64_t stime_value);
-    sbi_console_putchar('X');
-    panic("putchar");
-    //test.value = sbi_console_getchar();
-    //sbi_console_putchar(test.value);
-    unsigned long hart_mask_num = 0b10;
-    sbi_send_ipi(V2P(&hart_mask_num));
-    //  临时改成传值, 用于排除物理地址的错误
-    int count = 300;
-    while (count--) {
-        //
+    sbi_set_timer(50000);
+    while (1) {
+        //sbi_console_putchar('.');
+        //panic(".");
+        if (have_sip_stip()) {
+            panic("GOOD!");
+            break;
+        }
     }
-    panic("ipi");
-
+    
     while (1) {
     }
 }

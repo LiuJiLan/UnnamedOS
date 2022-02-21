@@ -66,7 +66,18 @@ int sbi_ecall_legacy_handler(regs_t EID, long * error, long * value,\
 }
 
 void sbi_set_timer(uint64 stime_value) {
+    //  注意我们只清除sip.STIP
     
+    asm volatile("li    t0, 0x1 << 5;"
+                 "csrc  mip, t0;"
+                 ://    无输出
+                 ://    无输入
+                 :"t0");
+    //  手册要求:
+    //  "This function also clears the
+    //  pending timer interrupt bit."
+    
+    timer_load(stime_value);    //  clint.c
 }
 
 void sbi_console_putchar(int ch) {
@@ -88,6 +99,16 @@ void sbi_send_ipi(const unsigned long * hart_mask) {
     //  但是我暂时不想实现其他的SBI Extensions
     //  在此处规定, Legacy Extensions传递的一律使用物理地址传值
     //  后续改进中将kernel内核中的sbi_send_ipi再改为IPI Extension
+    
+    //  但要注意, 根据手册"MSIP is read-only in mip"
+    //  "and is written by accesses to memory-mapped
+    //  control registers"
+    
+    //  但是, 对于sie和sip"The sip and sie registers are
+    //  subsets of the mip and mie registers. Reading
+    //  any implemented field, or writing any writable
+    //  field, of sip/sie effects a read or write of
+    //  the homonymous field of mip/mie."
     int target_hart_id = count_hart_mask(*hart_mask);
     set_m_s_sip(target_hart_id);
 }

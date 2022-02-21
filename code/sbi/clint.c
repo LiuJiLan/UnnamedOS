@@ -6,7 +6,6 @@
 //
 
 #include "clint.h"
-#include "sbi_defs.h"
 
 //  抄袭改写自RVOS中platform.h有关CLINT的部分
 
@@ -21,4 +20,12 @@ void set_m_s_sip(int hart_id) {
 
 void clear_m_s_sip(int hart_id) {
     *(volatile uint32*)CLINT_MSIP(hart_id) = 0;
+}
+
+
+//  抄袭改写自RVOS中timer.c部分
+void timer_load(uint64 interval) {
+    regs_t id = get_mhartid();
+    
+    *(volatile uint64*)CLINT_MTIMECMP(id) = *(volatile uint64*)CLINT_MTIME + interval;
 }

@@ -27,5 +27,9 @@ display/z $mstatus
 display/z $mie
 display/z $mip
 display/z $mtvec
+display/z $mideleg
 
 b testfunc
+
+#b sbi_set_timer
+#b sbi_ecall

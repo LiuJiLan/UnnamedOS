@@ -9,16 +9,45 @@
 #include "sbi_console.h"
 #include "uart.h"
 
+#include "clint.h"  //  for test
+
 static regs_t mhartid;
 
 void test_ipi(void) {
-    *((volatile uint32 *)(0x2000004U)) = 0x1U;
+    //*((volatile uint32 *)(0x2000004U)) = 0x1U;
+}
+
+int have_sip_stip(void) {
+    regs_t sip = 0;
+    asm volatile("csrr  %0, sip;"
+                 :"=r"(sip)
+                 :
+                 :);
+    if (sip & 0x20U) {
+        return  1;
+    } else {
+        return 0;
+    }
+}
+
+int have_mip_mtip(void) {
+    regs_t mip = 0;
+    asm volatile("csrr  %0, mip;"
+                 :"=r"(mip)
+                 :
+                 :);
+    if (mip & 0x80U) {
+        return  1;
+    } else {
+        return 0;
+    }
 }
 
 static inline void jump_to_kernel(uptr_t kernel_entry,\
                                   regs_t hart_id, uptr_t dtb_addr);
 
 void sbimain(regs_t hart_id, uptr_t dtb_addr) {
+    
     uptr_t kernel_entry;
     //    kernel_entry = loader_kernel();
     //    if (kernel_entry == 0) {
@@ -28,8 +57,19 @@ void sbimain(regs_t hart_id, uptr_t dtb_addr) {
     mhartid = hart_id;
     
     console_init();
-    console_putchar = &uart_putc;
-    console_getchar = &uart_getc;
+    uart_init();
+    
+    set_console_putchar(&uart_putc);
+    set_console_getchar(&uart_getc);
+    
+    //    timer_load(50000);
+    //    while (1) {
+    //        uart_putc('.');
+    //        if (have_mip_mtip()) {
+    //            panic("GOOD!");
+    //            break;
+    //        }
+    //    }
     
     kernel_entry = 0x80200000U;
     jump_to_kernel(kernel_entry, hart_id, dtb_addr);
@@ -46,13 +86,22 @@ static inline void jump_to_kernel(uptr_t kernel_entry, regs_t hart_id, uptr_t dt
                  //  进S-Mode
                  "li      t0, 0x1 << 11;"   //  mstatus.MPP = 0b01 S Mode
                  "csrs    mstatus, t0;"
-
+                 
                  "mv      t0, %0;"
                  "csrw    mepc, t0;"        //  为什么这么做参考手册中mret指令
                  
+                 // 开mideleg测一下中断
+                 // ssoft, stimer, sext -> 0x222
+                 "li      t0, 0x222;"
+                 "csrs    mideleg, t0;"
+                 "li      t0, 0x80;"
+                 "csrs    mie, t0;"
+                 "csrs    mstatus, t0;"
+                 
+                 
                  "mv      a0, %1;"
                  "mv      a1, %2;"
-
+                 
                  "mret;"
                  ://    无输出
                  :"r"(kernel_entry), "r"(hart_id), "r"(dtb_addr)
@@ -61,7 +110,7 @@ static inline void jump_to_kernel(uptr_t kernel_entry, regs_t hart_id, uptr_t dt
 
 void panic(char * s) {
     while (*s) {
-        uart_putc(*s++);
+        console_putchar(*s++);
     }
     return;
 }
@@ -72,7 +121,7 @@ void other(regs_t hart_id, uptr_t dtb_addr) {
     //  之后应该使用锁
     char ch = get_mhartid() + '0';
     panic("\nWake Up is Good!\nThe ");
-    uart_putc(ch);
+    console_putchar(ch);
     panic(" is Wake Up.\n");
     while (1) {};
 }

@@ -7,6 +7,9 @@
 
 #include "sbi_console.h"
 
+int (* console_putchar)(int);
+int (* console_getchar)(void);
+
 int dummy_putchar(int ch) {
     //  ignore any input
     return -1;  //  EOF

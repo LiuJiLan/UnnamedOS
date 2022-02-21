@@ -69,7 +69,7 @@ struct sbiret sbi_get_mimpid(void) {
 
 void sbi_set_timer(uint64 stime_value) {
     struct sbiret ret;
-    sbi_ecall(0x00, 0, &ret.error, &ret.value, 0, 0, 0, 0);
+    sbi_ecall(0x00U, 0, &ret.error, &ret.value, stime_value, 0, 0, 0);
 }
 
 void sbi_console_putchar(int ch) {
