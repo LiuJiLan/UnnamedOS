@@ -6,7 +6,12 @@ CFLAGS += -mcmodel=medany -mabi=lp64f -march=rv64imafc
 
 QEMU = qemu-system-riscv64
 QFLAGS = -smp 2 -M virt -bios none
-QFLAGS += -nographic
+#QFLAGS += -nographic
+QFLAGS += -serial pipe:/tmp/guest
+
+#mkfifo /tmp/guest.in /tmp/guest.out
+#cat /tmp/guest.out
+#printf "sth" > /tmp/guest.in
 
 CC = ${CROSS_COMPILE}gcc
 LD = ${CROSS_COMPILE}ld
