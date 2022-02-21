@@ -70,6 +70,43 @@ xor     sp, t1, sp      //  神奇的位运算, 结束后能保持t1和t2不变
 - 1、即使mstatus中的mie位的设为屏蔽中断, wfi仍会被中断唤醒
 - 2、在mie中屏蔽过的中断不会唤醒wfi状态的hart
 
+## sbi_set_timer与代理机制
 
+### 有关触发sip.STIP
+- **可能理解有误:**
+- 如果只去设置mtimecmp只会引发M态中断,
+- 我们尝试能有硬件的方法直接在mtimecmp >= mtime的时候引发STIP
+- 我们考虑的第一个想法是使用代理:
+- FU540的手册很容易让人误解, 8.4节中对应寄存器的例子
+- Field Name是MSIP, 作用是Delegate Supervisor Software Interrupt
+- 可能会让人以为是将MSIP位代理给SSIP位
+- (相当于MSIP的pending会反映在SSIP位上)
+- **但是就其他资料而言这是个错误的理解:**
+- `m*deleg`寄存器代理的行为因该是被代理的trap会被导向S态的一套寄出去
+- 例如陷入的位置是stvec而不是mtvec
+- **但这就会引发一个新的问题:**
+- 如果观察sip, S态其实读不到pending
+- (因为除了S态的interrupt其他位都是硬置0)(**其实并不是**)
+- 在这样的情况下, 我们只能通过M态转发
+- 详细而言是, 我们设置mtimecmp之后, 还要设置M态的trap
+- 让其在遇到MTIP时, 软件的设置STIP位, 从而达到触发STIP的效果
+- (`m*deleg`还是需要按需设置, 不然S态的中断也要扔回M态处理)
+- 当发现这一点时会觉得RISC-V设计的如此不合理, 
+- 通知S态发生了定时器中断竟需要如此多的软件步骤
+- **但是:**
+- 特权手册有关sie与sip部分:
+- ```Bits 3, 7, and 11 of sip and sie correspond to the machine-mode software, timer, and external interrupts, respectively. Since most platforms will choose not to make these interrupts delegatable from M-mode to S-mode, they are shown as 0 in Figures 4.6 and 4.7.```
+- 这说明在硬件设计上其实没有规定死S态不能代理M态中断
+- (本身有计划去复现一个可以支持我们这个系统的硬件平台, 所以我会关注这些)
+- 但是新问题又来了, scause中有关M态中断的位是置零的
+- 不知道在此处ISA会不会也有相应的放宽处理
+
+### 实现与设计
+- 可能由于上面的原因, openSBI和rustSBI都采取了转发的方式
+- (这或许也是模拟FU540物理平台的qemu的唯一途径)
+- 应该注意的是:
+- sbi_set_timer()部分只去关心定时器的设置, 
+- 有关转发的工作应该由M态(也就是SBI的)trap去关心
+- (有部分资料中把这些部分称为runtime)
 
 
