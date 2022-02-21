@@ -41,6 +41,9 @@ kernel.elf: ${OBJS}
 QFLAGS += -device loader,file=../out/sbi.bin,addr=0x80000000
 QFLAGS += -device loader,file=./kernel.bin,addr=0x80200000
 
+sbi:
+	@cd ../sbi; make sbi.elf -B
+
 .PHONY : debug
 debug: all
 	@$(OBJDUMP) -D -b binary -m riscv kernel.bin > dis.asm
