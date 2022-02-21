@@ -37,15 +37,37 @@ int main(void) {
     
     struct sbiret test;
     
-    sbi_set_timer(50000);
+    sbi_set_timer(5000000);
     while (1) {
-        //sbi_console_putchar('.');
+        sbi_console_putchar('.');
         //panic(".");
         if (have_sip_stip()) {
-            panic("GOOD!");
+            sbi_console_putchar('C');
+            //panic("GOOD!");
             break;
         }
     }
+    
+    //  由于STIP没有被清除, 所以只会打印一个加号就会打印X
+    while (1) {
+        sbi_console_putchar('+');
+        if (have_sip_stip()) {
+            sbi_console_putchar('X');
+            break;
+        }
+    }
+    
+    sbi_set_timer(50000);
+    //  重设后会清除STIP
+    while (1) {
+        sbi_console_putchar('-');
+        if (have_sip_stip()) {
+            sbi_console_putchar('Y');
+            break;
+        }
+    }
+    
+    panic("END!");
     
     while (1) {
     }
