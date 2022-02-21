@@ -30,27 +30,27 @@ csrr    t0, mscratch    //恢复t0
 - 我们参考一下[openSBI](https://github.com/riscv-software-src/opensbi/blob/master/firmware/fw_base.S) 中`TRAP_SAVE_AND_SETUP_SP_T0`
 - 我暂设的逻辑是:
 ```
-swap(mscratch, t0)      - mscratch是每个hart的栈的栈顶, csrrw t0, mscratch, t0
+swap(mscratch, t0)          //  mscratch是每个hart的栈的栈顶, csrrw t0, mscratch, t0
 save_who_to_stack(t1, t0)   //  第一个是对象, 第二个是栈顶, t1入栈
 save_who_to_stack(t2, t0)   //  存原t2
-t1 = t0 - 临时空间大小    - 临时空间就是hart的栈的栈顶之下的一小部分, 用于存一些临时变量
-                        - 如果不是从M态trap, 则栈顶在临时空间大小之后
-t2 = sp                 - t2 = 原sp
+t1 = t0 - 临时空间大小        //  临时空间就是hart的栈的栈顶之下的一小部分, 用于存一些临时变量
+                            //  如果不是从M态trap, 则栈顶在临时空间大小之后
+t2 = sp                     //  t2 = 原sp
 sp = if (MSTATUS.MPP != M-Mode) return t1; else return t2;
 save_who_to_stack(t2, sp)   // 保存之前的原sp
 t1 = 原t1                    
-t2 = 原t2               - hart的栈的栈顶还在由t0维护, 所以先恢复这两个
+t2 = 原t2                   //  hart的栈的栈顶还在由t0维护, 所以先恢复这两个
 swap(mscratch, t0)          // 将原t0换回, mscratch继续保存hart的栈的栈顶
 //  要将mscratch换出的本质是因为它是一个CSR寄存器, 不能直接对他使用sd/ld指令去控制栈
 //  设置sp具体的方法是:
 set()   sp, MSTATUS.MPP //  伪代码, 实际上csrr + srl来实现
-andi    sp, sp, 0b11- 0b11是M-Mode编号, 与上后如果不是M-Mode必然比0b11小
-slti    sp, sp, 0b11- if (M-Mode) sp = 0; else sp = 1;
-addi    sp, sp, -1  - sp -= 1 (制造0b1...1和0b0...0)
+andi    sp, sp, 0b11    //  0b11是M-Mode编号, 与上后如果不是M-Mode必然比0b11小
+slti    sp, sp, 0b11    //  if (M-Mode) sp = 0; else sp = 1;
+addi    sp, sp, -1      //  sp -= 1 (制造0b1...1和0b0...0)
 xor     t2, t2, t1
 and     sp, sp, t2
 xor     t2, t2, t1
-xor     sp, t1, sp  - 神奇的位运算, 结束后能保持t1和t2不变
+xor     sp, t1, sp      //  神奇的位运算, 结束后能保持t1和t2不变
 ```
 
 ## sbi_trap
