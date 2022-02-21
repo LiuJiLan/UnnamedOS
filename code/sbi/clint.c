@@ -14,18 +14,24 @@
 #define CLINT_MTIMECMP(hartid) (CLINT_BASE + 0x4000 + 8 * (hartid))
 #define CLINT_MTIME (CLINT_BASE + 0xBFF8) // cycles since boot.
 
-void set_m_s_sip(int hart_id) {
+void set_CLINT_MSIP(int hart_id) {
     *(volatile uint32*)CLINT_MSIP(hart_id) = 1;
 }
 
-void clear_m_s_sip(int hart_id) {
+void clear_CLINT_MSIP(int hart_id) {
     *(volatile uint32*)CLINT_MSIP(hart_id) = 0;
 }
 
 
 //  抄袭改写自RVOS中timer.c部分
-void timer_load(uint64 interval) {
+void set_CLINT_timer_interval(uint64 interval) {
     regs_t id = get_mhartid();
     
     *(volatile uint64*)CLINT_MTIMECMP(id) = *(volatile uint64*)CLINT_MTIME + interval;
+}
+
+void set_CLINT_mtimecmp_infinitely(void) {
+    regs_t id = get_mhartid();
+    
+    *(volatile uint64*)CLINT_MTIMECMP(id) = -1;
 }

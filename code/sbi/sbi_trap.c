@@ -9,15 +9,37 @@
 #include "sbi_type.h"
 #include "sbi_ecall.h"
 
+#include "sbi_defs.h"
+#include "clint.h"
+
 struct sbi_trap_regs * sbi_trap_handler(struct sbi_trap_regs * regs) {
     regs_t mcause = regs->mcause;
+    int hart_id = 0;
     
     if (mcause & (0x1UL << 63)) {   //  中断
         mcause &= ~(1UL << 63);
         switch (mcause) {
             case Machine_Software_Interrupt:
-                //  这里留一个例子
-                //  正好我们也需要处理ipi
+                hart_id = get_mhartid();
+                //  清pending
+                clear_CLINT_MSIP(hart_id);
+                //  转发SSIP
+                asm volatile("li    t0, 0x2;"
+                             "csrs  mip, t0;"
+                             :
+                             :
+                             :"t0");
+                break;
+                
+            case Machine_Timer_Interrupt:
+                //  清pending
+                set_CLINT_mtimecmp_infinitely();
+                //  转发STIP
+                asm volatile("li    t0, 0x20;"
+                             "csrs  mip, t0;"
+                             :
+                             :
+                             :"t0");
                 break;
                 
             default:

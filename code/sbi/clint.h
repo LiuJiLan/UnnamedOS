@@ -10,9 +10,10 @@
 
 #include "sbi_type.h"
 
-void set_m_s_sip(int hart_id);
-void clear_m_s_sip(int hart_id);
+void set_CLINT_MSIP(int hart_id);
+void clear_CLINT_MSIP(int hart_id);
 
-void timer_load(uint64 interval);
+void set_CLINT_timer_interval(uint64 interval);
+void set_CLINT_mtimecmp_infinitely(void);
 
 #endif /* clint_h */

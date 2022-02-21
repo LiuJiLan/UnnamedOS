@@ -18,5 +18,7 @@
 
 #define SBI_STACK_SIZE 1024
 
+#define DEFAULT_TIMER_INTERVAL -1
+
 
 #endif /* sbi_param_h */

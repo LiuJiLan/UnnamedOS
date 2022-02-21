@@ -43,6 +43,46 @@ int have_mip_mtip(void) {
     }
 }
 
+int have_mip_mtip_clear_and_test(void) {
+    regs_t mip = 0;
+    asm volatile("li    t0, 0x80;"
+                 "csrc  mip, t0;"
+                 "csrr  %0, mip;"
+                 :"=r"(mip)
+                 :
+                 :"t0");
+    if (mip & 0x80U) {
+        return  1;
+    } else {
+        return 0;
+    }
+}
+
+int have_sip_stip_set_and_clear_test(void) {
+    regs_t mip = 0;
+    asm volatile("li    t0, 0x20;"
+                 "csrs  mip, t0;"
+                 "csrr  %0, mip;"
+                 :"=r"(mip)
+                 :
+                 :"t0");
+    if (mip & 0x20U) {
+        asm volatile("li    t0, 0x20;"
+                     "csrc  mip, t0;"
+                     "csrr  %0, mip;"
+                     :"=r"(mip)
+                     :
+                     :"t0");
+        if (mip & 0x20U) {
+            return  -1;
+        } else {
+            return 1;
+        }
+    } else {
+        return 0;
+    }
+}
+
 static inline void jump_to_kernel(uptr_t kernel_entry,\
                                   regs_t hart_id, uptr_t dtb_addr);
 
@@ -70,6 +110,45 @@ void sbimain(regs_t hart_id, uptr_t dtb_addr) {
     //            break;
     //        }
     //    }
+    //    timer_load(500000000);
+    //    if (have_mip_mtip_clear_and_test()) {
+    //        panic("\nClear Fail!\n");
+    //    } else {
+    //        panic("\nClear Good!\n");
+    //    }
+    //    int test = have_sip_stip_set_and_clear_test();
+    //    switch (test) {
+    //        case -1:
+    //            panic("\nCLEAR ERROR.\n");
+    //            break;
+    //
+    //        case 0:
+    //            panic("\nSET ERROR.\n");
+    //            break;
+    //
+    //        case 1:
+    //            panic("\nGOOD.\n");
+    //            break;
+    //
+    //        default:
+    //            break;
+    //    }
+    
+    //    set_CLINT_timer_interval(50000);
+    //    while (1) {
+    //            uart_putc('.');
+    //            if (have_mip_mtip()) {
+    //                panic("\nGOOD!\n");
+    //                break;
+    //            }
+    //   }
+    //    set_CLINT_mtimecmp_infinitely();
+    //    if (have_mip_mtip()) {
+    //        panic("\nNO GOOD!\n");
+    //    } else {
+    //        panic("\nTEST GOOD!\n");
+    //    }
+    
     
     kernel_entry = 0x80200000U;
     jump_to_kernel(kernel_entry, hart_id, dtb_addr);
