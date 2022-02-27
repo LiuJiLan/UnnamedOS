@@ -59,6 +59,8 @@ https://blog.csdn.net/fuxy3/article/details/104732541
 ## To Do
 * [ ] 实现SBI         entry.S
 * [ ] li和la问题       见kernel README entry.S部分
+* [ ] 替换掉锁里的编译器预设原子指令   见kernel spinlock部分
+* [ ] cprintf中有关%x、%p的部分有误, 暂时是32位的状态   见sbi、kernel中的console部分
 
 ## Done
 
@@ -70,3 +72,16 @@ https://blog.csdn.net/fuxy3/article/details/104732541
 - 手头版本使用`-m 6M`参数会导致dtb的地址为0x8000_0000, 
 - 取消此参数dtb的地址将会是默认值0x8700_0000
 - 固我们暂时删除了这个参数
+
+# 5.Temp
+
+## dtb解读
+```sudo apt  install device-tree-compiler```
+
+
+# 6.xv6中改进点
+1.  xv6采用了分页机制与虚拟地址的术语, 但没有实现页帧与磁盘的交换[P119]
+>   由于没有实现“页帧与磁盘的交换”, 所以没有理论上不会出现所谓缺页的情况, 这里**暂不清楚**xv6是否缺乏对缺页的处理[P152]
+2.  xv6没有实现对x86内存总量的测定(`kinit1()`与`kinit2()`)[P120]
+3.  xv6对物理页帧的管理非常简单(`kalloc()`与`kfree()`)[P126]
+4.  xv6的进程亲缘关系组织比Linux要简单得多, 只有父进程关系, 无法直接知道自己的子进程和兄弟进程[P157]
