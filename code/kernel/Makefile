@@ -10,6 +10,9 @@ KERNEL_C = \
 	console.c \
 	vm.c \
 	sbi.c \
+	mp.c \
+	proc.c \
+	spinlock.c \
 	
 KERNEL_PY = \
 	test.py \

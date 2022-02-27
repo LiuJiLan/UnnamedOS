@@ -7,6 +7,8 @@
 
 #include "defs.h"
 
+#include <stdarg.h>
+
 void panic(char *s) {
     //  暂时用来debug, 未实现
 }

@@ -19,5 +19,19 @@ static inline void satp(unsigned long address) {
                  :"t0", "t1");
 }
 
+static inline void clear_sstatus_SIE(void) {
+    asm volatile("csrci   mstatus, 0x2;");
+}
+
+static inline void set_sstatus_SIE(void) {
+    asm volatile("csrsi   mstatus, 0x2;");
+}
+
+static inline regs_t get_sstatus() {
+    regs_t x;
+    asm volatile("csrr %0, sstatus" : "=r" (x) );
+    return x;
+}
+
 
 #endif /* riscv_h */

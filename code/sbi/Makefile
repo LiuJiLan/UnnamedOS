@@ -13,6 +13,8 @@ KERNEL_C = \
 	sbi_console.c \
 	uart.c \
 	clint.c \
+	sbi_spinlock.c \
+	cpu.c \
 	#loader.c \
 
 	

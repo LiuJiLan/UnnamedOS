@@ -29,45 +29,40 @@ int have_sip_stip(void) {
 
 extern char end[];   //  链接脚本中提供, 更多详情见README/main.c/引入外部symbol
 
-int main(void) {
+static regs_t mhartid;
+
+regs_t get_mhartid(void) {
+    return mhartid;
+}
+
+int main(regs_t hart_id, uptr_t dtb_addr) {
     kinit1((void *)end, (void *)P2V(0x80200000 + 0x200000));    // 见README
     panic("kinit1");
     kvmalloc();
     panic("SBI");
+    mpinit();
+    //cprintf();
+    //consoleinit();
+    //    uartinit();
+    //    pinit();
+    //    tvinit();
+    //    binit();
+    //    fileinit();
+    //    ideinit();
+    //    startothers();
+    //    kinit2(P2V(4*1024*1024), P2V(PHYSTOP));
+    //    userinit(); 
+    //    mpmain();
+    unsigned long hart = 0b10;
+    sbi_send_ipi(V2P(&hart));
     
-    struct sbiret test;
-    
-    sbi_set_timer(5000000);
-    while (1) {
-        sbi_console_putchar('.');
-        //panic(".");
-        if (have_sip_stip()) {
-            sbi_console_putchar('C');
-            //panic("GOOD!");
-            break;
-        }
+    panic("ipi");
+    int count = 3000;
+    while (count--) {
+        
     }
-    
-    //  由于STIP没有被清除, 所以只会打印一个加号就会打印X
-    while (1) {
-        sbi_console_putchar('+');
-        if (have_sip_stip()) {
-            sbi_console_putchar('X');
-            break;
-        }
-    }
-    
-    sbi_set_timer(50000);
-    //  重设后会清除STIP
-    while (1) {
-        sbi_console_putchar('-');
-        if (have_sip_stip()) {
-            sbi_console_putchar('Y');
-            break;
-        }
-    }
-    
     panic("END!");
+
     
     while (1) {
     }

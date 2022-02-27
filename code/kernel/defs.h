@@ -9,6 +9,14 @@
 #define defs_h
 
 #include "type.h"
+#include "proc.h"
+#include "spinlock.h"
+
+struct spinlock;
+struct cpu;
+
+//main
+regs_t get_mhartid(void);
 
 // console.c
 //void            consoleinit(void);
@@ -32,6 +40,38 @@ char*           kalloc(void);
 void            kfree(char*);
 void            kinit1(void*, void*);
 void            kinit2(void*, void*);
+
+// mp.c
+extern int      ismp;
+void            mpinit(void);
+
+// proc.c
+//int             cpuid(void);
+//void            exit(void);
+//int             fork(void);
+//int             growproc(int);
+//int             kill(int);
+struct cpu*     mycpu(void);
+//struct proc*    myproc();
+//void            pinit(void);
+//void            procdump(void);
+//void            scheduler(void) __attribute__((noreturn));
+//void            sched(void);
+//void            setproc(struct proc*);
+//void            sleep(void*, struct spinlock*);
+//void            userinit(void);
+//int             wait(void);
+//void            wakeup(void*);
+//void            yield(void);
+
+// spinlock.c
+void            acquire(struct spinlock*);
+//void            getcallerpcs(void*, uint*);
+int             holding(struct spinlock*);
+void            initlock(struct spinlock*, char*);
+void            release(struct spinlock*);
+void            pushcli(void);
+void            popcli(void);
 
 // vm.c
 //void            seginit(void);

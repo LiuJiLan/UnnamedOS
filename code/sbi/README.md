@@ -155,3 +155,5 @@ xor     sp, t1, sp      //  神奇的位运算, 结束后能保持t1和t2不变
 - ```or it can instead mask the timer interrupt by clearing sie.STIE CSR bit.```
 - **我直接设置mtimecmp只是为了在M态trap中清除MTIP而已!**
 
+## cprintf
+- 见kernel / 思考 / cprintf部分

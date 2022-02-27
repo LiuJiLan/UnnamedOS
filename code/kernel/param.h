@@ -24,7 +24,9 @@
 #ifndef param_h
 #define param_h
 
-#define KSTACKSIZE 4096  // size of per-process kernel stack
+#define NCPU        2
+
+#define KSTACKSIZE  4096  // size of per-process kernel stack
 
 
 #endif /* param_h */

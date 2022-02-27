@@ -10,6 +10,7 @@
 #include "defs.h"
 #include "memlayout.h"
 #include "mmu.h"
+#include "spinlock.h"
 
 void freerange(void * vstart, void * vend);
 
@@ -20,13 +21,13 @@ struct run {
 };
 
 struct {
-    // struct spinlock lock;  //  还没去写
+    struct spinlock lock;
     int use_lock;
     struct run *freelist;
 } kmem;
 
 void kinit1(void * vstart, void * vend) {
-    // initlock(&kmem.lock, "kmem");  // 暂未实现
+    initlock(&kmem.lock, "kmem");
     kmem.use_lock = 0;
     freerange(vstart, vend);
 }
@@ -72,15 +73,18 @@ void kfree(char *v) {
      */
     
     
-    //    if (kmem.use_lock) {
-    //        acquire(&kmem.lock);
-    //    }
+    if (kmem.use_lock) {
+        acquire(&kmem.lock);
+    }
+    
     r = (struct run*)v;
     r->next = kmem.freelist;
     kmem.freelist = r;
-    //    if (kmem.use_lock) {
-    //        release(&kmem.lock);
-    //    }
+    
+    if (kmem.use_lock) {
+        release(&kmem.lock);
+    }
+    
     //  注意此处的处理, 我们认为kmem.freelist的初值是NULL(0)
     //  它之后都指向链表的第一个node
     //  简而言之就是不停向dummy head和和第一个node直接插入新的node
@@ -89,15 +93,18 @@ void kfree(char *v) {
 char* kalloc(void) {
     struct run *r;
     
-    //    if (kmem.use_lock) {
-    //        acquire(&kmem.lock);
-    //    }
+    if (kmem.use_lock) {
+        acquire(&kmem.lock);
+    }
+    
     r = kmem.freelist;
     if (r) {    //  如果不是NULL就分出一个node出来
         kmem.freelist = r->next;
     }
-    //    if (kmem.use_lock) {
-    //        release(&kmem.lock);
-    //    }
+    
+    if (kmem.use_lock) {
+        release(&kmem.lock);
+    }
+    
     return (char*)r;
 }

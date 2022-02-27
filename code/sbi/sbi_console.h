@@ -16,6 +16,11 @@ void console_init(void);
 void set_console_putchar(void * func);
 void set_console_getchar(void * func);
 
+static void printint(int xx, int base, int sign);
+void cprintf(char *fmt, ...);
+void panic(char *s);
+
+
 #endif /* sbi_console_h */
 
 /*

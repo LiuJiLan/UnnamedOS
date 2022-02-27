@@ -15,6 +15,7 @@
 //  不知为何openSBI将32个通用寄存器全部给存了, 但没有存mcause
 //  为了我自己方便我选择还是存mcause
 
+#define NCPU        2
 
 #define SBI_STACK_SIZE 1024
 
