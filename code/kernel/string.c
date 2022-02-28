@@ -80,7 +80,7 @@ int strncmp(const char *p, const char *q, unsigned long n)
     return res;
 }
 
-char *strncpy(char *s, const char *t, int n)
+char *strncpy(char *s, const char *t, unsigned long n)
 {
     if(s == NULL || t == NULL || n < 0)
         return NULL;

@@ -109,8 +109,25 @@ static struct kmap {            //  内核空间的划分
     //  { (void*)KERNLINK, V2P(KERNLINK), V2P(data), 0},     // 内核 text+rodata
     //  { (void*)data,     V2P(data),     PHYSTOP,   PTE_W}, // 内核 data+memory
     // { (void*)0xffffffff40000000, 0x0, 0x10000000, PTE_W | PTE_R | PTE_X},    //  这行用于测试
-    { (void*)KERNLINK, V2P(KERNLINK), PHYSTOP, PTE_W | PTE_R | PTE_X}
+    { (void*)KERNLINK, V2P(KERNLINK), PHYSTOP, PTE_W | PTE_R | PTE_X},
+    //UART0
+    { (void*)P2V(0x10000000), 0x10000000, 0x10000000 + 0x100, PTE_W | PTE_R | PTE_X},
+    { (void*)P2V(0x0c000000), 0x0c000000, 0x0c300000, PTE_W | PTE_R | PTE_X}
 };
+//设备的映射我们也采取与内核一样的偏移量
+//方便转换
+//另外设备里我们的设计暂时不包涵CLINT, 因为考虑到它是M态下的设备,
+//我们不在使用页表的S态管理它(因为也不会在S态访问)
+
+//qemu的内存映射结构参考
+//https://github.com/qemu/qemu/blob/master/hw/riscv/virt.c
+
+//PLIC的大小与hart的数量有关
+//https://github.com/qemu/qemu/blob/master/include/hw/riscv/virt.h
+//因为偷懒在此映射的空间并不是真正的大小, qemu里面PLIC的大小应该是
+//num of hart * 0x1000 + 0x200000, 我们取总大小为0x300000, 只会多不会少
+
+//我们暂时直接使用数值, 后续应该引入类似platform.h去提升代码可读性和可移植性
 
 pte_t * setupkvm(void) {
     pte_t *pgdir;

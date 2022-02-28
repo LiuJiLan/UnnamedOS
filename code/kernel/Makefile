@@ -13,6 +13,7 @@ KERNEL_C = \
 	mp.c \
 	proc.c \
 	spinlock.c \
+	plic.c \
 	
 KERNEL_PY = \
 	test.py \

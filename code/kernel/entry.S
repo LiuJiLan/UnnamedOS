@@ -59,8 +59,8 @@ for_gdb_virtual:
     addi    sp, sp, %lo(stack + KSTACKSIZE)
 
     //  la      t0, main        //  进kernel的main函数
-    lui     t0, %hi(main)
-    addi    t0, t0, %lo(main)
+    lui     t0, %hi(kmain)
+    addi    t0, t0, %lo(kmain)
     jr      t0
 
 .comm stack, KSTACKSIZE

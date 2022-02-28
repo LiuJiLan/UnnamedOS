@@ -6,7 +6,7 @@ target remote : 1234
 b for_gdb_physical
 c
 
-b main
+b kmain
 #在panic设断点, panic暂未实现, 用于debug
 b panic
 c

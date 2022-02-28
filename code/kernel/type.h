@@ -23,7 +23,12 @@ typedef long                ptr_t;
 typedef unsigned long       uptr_t;
 
 typedef unsigned long       regs_t;
+typedef unsigned long       size_t;
 
 typedef uptr_t           pte_t;
+
+typedef pte_t pde_t;
+//  由于我们后面考虑重命名这个type, 所以我们在这里重新加上
+//  前面部分本是pde的部分被我们改成了pte, 这次更改后我们不再更改
 
 #endif /* type_h */

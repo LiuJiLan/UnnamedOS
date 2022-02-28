@@ -7,6 +7,16 @@
 
 #include "proc.h"
 #include "defs.h"
+#include "spinlock.h"
+
+struct {
+  struct spinlock lock;
+  struct proc proc[NPROC];
+} ptable;
+
+void pinit(void) {
+  initlock(&ptable.lock, "ptable");
+}
 
 struct cpu* mycpu(void) {
     //其实不太需要,

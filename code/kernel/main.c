@@ -35,35 +35,37 @@ regs_t get_mhartid(void) {
     return mhartid;
 }
 
-int main(regs_t hart_id, uptr_t dtb_addr) {
+int kmain(regs_t hart_id, uptr_t dtb_addr) {
     kinit1((void *)end, (void *)P2V(0x80200000 + 0x200000));    // 见README
     panic("kinit1");
     kvmalloc();
     panic("SBI");
     mpinit();
-    //cprintf();
-    //consoleinit();
+    //lapicinit();
+    //seginit();    //我们不需要管理段
+    //picinit();    //作用是关闭所有中断, 我们的中断本身就是关着的
+    //ioapicinit(); //使用plic替换
+    
+    //我们plic init的作用也跟ioapicinit有着不同
+    //我们尽量保持函数结构的相同
+    //比如我们也引出了plic init与plic enable两个函数
+    //另外我们没有参考了xv6-k210的plicinithart();
+    //我们将这个函数也直接放入plic init中
+    plicinit();
+    
+    //    consoleinit();
     //    uartinit();
-    //    pinit();
+    pinit();
     //    tvinit();
     //    binit();
     //    fileinit();
     //    ideinit();
     //    startothers();
     //    kinit2(P2V(4*1024*1024), P2V(PHYSTOP));
-    //    userinit(); 
+    //    userinit();
     //    mpmain();
-    unsigned long hart = 0b10;
-    sbi_send_ipi(V2P(&hart));
     
-    panic("ipi");
-    int count = 3000;
-    while (count--) {
-        
-    }
     panic("END!");
-
-    
     while (1) {
     }
 }
