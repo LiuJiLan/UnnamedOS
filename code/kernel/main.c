@@ -53,7 +53,7 @@ int kmain(regs_t hart_id, uptr_t dtb_addr) {
     //我们将这个函数也直接放入plic init中
     plicinit();
     
-    //    consoleinit();
+    //consoleinit();//由于需要解决file的问题, 所以先去看file
     //    uartinit();
     pinit();
     //    tvinit();

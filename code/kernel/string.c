@@ -50,7 +50,7 @@ void * memmove(void * dst, const void * src, size_t len) {
 
 // memcpy exists to placate GCC.  Use memmove.
 void* memcpy(void *dst, const void *src, size_t n) {
-  return memmove(dst, src, n);
+    return memmove(dst, src, n);
 }
 
 
@@ -69,7 +69,7 @@ void * memset(void * b, int c, size_t len) {
 char * safestrcpy(char * dst, const char * src, int n) {
     //参数参考strncpy()的参数名, 但是n可以小于0, 所以n是int类型
     char *os;
-
+    
     os = dst;
     if (n <= 0) {
         return os;
@@ -102,7 +102,7 @@ int strncmp(const char * s1, const char * s2, size_t n) {
 
 char * strncpy(char * dst, const char * src, size_t n) {
     char *os;
-
+    
     os = dst;
     while (n-- > 0 && (*dst++ = *src++) != 0);
     while (n-- > 0) {
