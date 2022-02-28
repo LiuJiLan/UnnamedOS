@@ -32,7 +32,7 @@ void sbimain(regs_t hart_id, uptr_t dtb_addr) {
     set_console_putchar(&uart_putc);
     set_console_getchar(&uart_getc);
     
-    cprintf("test d = %d = %x = %s\n", 114, 0x514, "test2");
+    cprintf("Going to the kernel.\n");
     
     
     kernel_entry = 0x80200000U;
