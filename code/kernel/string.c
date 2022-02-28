@@ -2,111 +2,112 @@
 //  string.c
 //  xv6-qemu
 //
-//  Created by KeZiJie and LiXuHao on 2022/1/18
+//  Created by LiuJiLan on 2022/2/28
 //
 
-//  函数在defs中声明
-//  注意在现代标准中有的使用的是size_t, 之后可以更完善
+#include "defs.h"
 
-#define NULL 0x0
-// 理论上是不能用NULL的, 之后再让组员把这里改精细一些吧
+//参考Xcode中的函数参数, 以"__"开头的删除"__"
 
-void *memset(void *dst, int c, unsigned long len)
-{
-    if (dst == NULL || len < 0)
-    {
-        return NULL;
+int memcmp(const void * s1, const void * s2, size_t n) {
+    const unsigned char *v1, *v2;
+    
+    v1 = s1;
+    v2 = s2;
+    while (n-- > 0) {
+        if (*v1 != *v2) {
+            return *v1 - *v2;
+        }
+        v1++;
+        v2++;
     }
-    char *pdst = (char *)dst;
-    while (len-- > 0)
-    {
-        *pdst++ = c;
+    
+    return 0;
+}
+
+void * memmove(void * dst, const void * src, size_t len) {
+    const char *s;
+    char *d;
+    
+    s = src;
+    d = dst;
+    if (s < d && s + len > d) {
+        //说明目标d在s段的中间, 直接用s++和d++的方式会使部分空间被覆盖
+        //所以要从结尾反着来
+        s += len;
+        d += len;
+        while (len-- > 0) {
+            *--d = *--s;
+        }
+    } else {
+        while (len-- > 0) {
+            *d++ = *s++;
+        }
     }
+    
     return dst;
 }
 
-int memcmp(const void *v1, const void *v2, unsigned long n)
-{
-    const unsigned char *su1, *su2;
-    int res = 0;
-    for (su1 = v1, su2 = v2; 0 < n; ++su1, ++su2, n--)
-        if ((res = *su1 - *su2) != 0)
-            break;
-    return res;
+// memcpy exists to placate GCC.  Use memmove.
+void* memcpy(void *dst, const void *src, size_t n) {
+  return memmove(dst, src, n);
 }
 
-void * memmove(void * dst, const void * src, unsigned long n)
-{
-    void * ret = dst;
-    if (dst <= src || (char *)dst >= ((char *)src + n))
-    {
-        //若dst和src区域没有重叠，则从起始处开始逐一拷贝
-        while (n--)
-        {
-            *(char *)dst = *(char *)src;
-            dst = (char *)dst + 1;
-            src = (char *)src + 1;
-        }
+
+void * memset(void * b, int c, size_t len) {
+    //注意, 尽管c的类型是int, 本质上还是一个char
+    char *d;
+    
+    d = b;
+    while (len-- > 0) {
+        *d++ = c;
     }
-    else
-    {
-        // 若dst和src 区域交叉，则从尾部开始向起始位置拷贝，这样可以避免数据冲突
-        dst = (char *)dst + n - 1;
-        src = (char *)src + n - 1;
-        while (n--)
-        {
-            *(char *)dst = *(char *)src;
-            dst = (char *)dst - 1;
-            src = (char *)src - 1;
-        }
+    
+    return b;
+}
+
+char * safestrcpy(char * dst, const char * src, int n) {
+    //参数参考strncpy()的参数名, 但是n可以小于0, 所以n是int类型
+    char *os;
+
+    os = dst;
+    if (n <= 0) {
+        return os;
     }
-    return (ret);
-}
-
-void* memcpy(void *dst, const void *src, unsigned long n)
-{
-    return memmove(dst, src, n);
-}
-
-int strncmp(const char *p, const char *q, unsigned long n)
-{
-    signed char res = 0;
-    while (n--)
-    {
-    //  比较到结束符/0，时，已经做了res = *p - *q了，所以不等长度时，肯定返回不为0
-        if ((res = *p - *q++) != 0 || !*p++)
-            break;
+    while (n-- > 0 && (*dst++ = *src++) != 0);
+    while (n-- > 0) {
+        *dst++ = 0;
     }
-    return res;
+    
+    return os;
 }
 
-char *strncpy(char *s, const char *t, unsigned long n)
-{
-    if(s == NULL || t == NULL || n < 0)
-        return NULL;
-    int i = 0;
-    char *temp = s;
-    for (i = 0; i < n; i++)
-    {
-        *temp++ = *t++;
+int strlen(const char * s) {
+    int n;
+    for (n = 0; s[n]; n++);
+    return n;
+}
+
+int strncmp(const char * s1, const char * s2, size_t n) {
+    while (n > 0 && *s1 && *s1 == *s2) {
+        n--;
+        s1++;
+        s2++;
     }
-    return s;
-}
-
-char* safestrcpy(char* dst, const char* src, int n)
-{
-    //  未实现
-    return 0;   //  单纯为了消除warning
-}
-
-int strlen(const char *s)
-{
-    int len=0;
-    if(s == NULL)
+    if (n == 0) {
         return 0;
-    while(*s++!='\0')
-    {
-        len++;
     }
-    return len;
+    return (unsigned char)*s1 - (unsigned char)*s2;
+}
+
+char * strncpy(char * dst, const char * src, size_t n) {
+    char *os;
+
+    os = dst;
+    while (n-- > 0 && (*dst++ = *src++) != 0);
+    while (n-- > 0) {
+        *dst++ = 0;
+    }
+    
+    return os;
 }
