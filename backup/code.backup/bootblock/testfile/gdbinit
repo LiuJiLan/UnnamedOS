@@ -1,0 +1,5 @@
+set disassemble-next-line on
+b start
+target remote : 1234
+
+

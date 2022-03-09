@@ -1,27 +1,56 @@
 # xv6-qemu
 尝试xv6在qemu-system-riscv64的移植
 
-# 1.环境设置
+# 1.资料对照
+1.  有关代码中参考的操作系统
 
-如果选用Ubuntu 20.04的环境, 可以直接用apt来配环境。
+* **xv6** 指 
+[xv6-public](https://github.com/mit-pdos/xv6-public)
+> 基于x86体系, 现已不再维护。  
+> 最后的版本为`Commits on Aug 11, 2020`   
+> 个人习惯称这个版本为`xv6`
 
+* **xv6-riscv** 指
+[xv6-riscv](https://github.com/mit-pdos/xv6-riscv)
+> 其与xv6相比更改了部分的实现  
+> 我个人还是对xv6中的一些部分更加满意(比如console输出部分)
+
+* **书中版本** 指
+《操作系统原型——xv6分析与实验》中的xv6版本
+> 没有去仔细对比, 但通过对比`bio.c`中的`binit()`函数,
+> 基本可以确定书中版本应该是
+> `Commits on Sep 12, 2016`版本之前的版本
+
+* **rCore** 指
+[rCore](https://github.com/rcore-os/rCore)
+> 基于了SBI, 起始运行在0x8020_0000, S态  
+> 而xv6-riscv则起始运行在0x8000_0000, M态  
+> 但是要指出, **xv6-riscv的主核心还是在S态的**
+
+* **rCore教学版** 指
+[rCore-Tutorial-Book-v3](https://github.com/rcore-os/rCore-Tutorial-Book-v3)
+> rCore的教学版本, 在地址映射方面和rCore有一些区别  
+> 教程直接可以看[这里](https://rcore-os.github.io/rCore-Tutorial-Book-v3/)
+
+
+# 2.环境设置
+
+* **RISC-V编译器**
+> 我们直接使用apt安装`gcc-riscv64-unknown-elf`
 ```
 $ sudo apt update
-$ sudo apt install build-essential gcc make perl dkms git gcc-riscv64-unknown-elf gdb-multiarch qemu-system-misc
+$ sudo apt install gcc-riscv64-unknown-elf
 ```
 
-注意: apt安装的qemu版本只有4.几
+* **GDB调试**
+> 参考rCore教程[gdb相关部分](https://rcore-os.github.io/rCore-Tutorial-deploy/docs/pre-lab/gdb.html)  
+> 暂不推荐使用`gdb-multiarch`, 虽然其可以直接apt安装, 
+> 但是其使用中存在一些问题
 
-## 安装 riscv64-unknown-elf-gdb
-
-可以参考:
-https://rcore-os.github.io/rCore-Tutorial-deploy/docs/pre-lab/gdb.html
-
-## 安装 riscv64-unknown-elf-gdb
-
-可以参考:
-https://rcore-os.github.io/rCore_tutorial_doc/chapter2/part5.html
-此处我选择了最新的stable版的qemu-6.1.1
+* **QEMU模拟器**
+> 参考rCore教程[qemu相关部分](https://rcore-os.github.io/rCore_tutorial_doc/chapter2/part5.html)  
+> 注意: apt安装的qemu版本只有4.几  
+> 这里放上我配环境的过程:
 ```
 wget https://download.qemu.org/qemu-6.1.1.tar.xz
 tar xvJf qemu-6.1.1.tar.xz
@@ -31,54 +60,36 @@ cd build
 make -j$(nproc)
 make install
 ```
+>   
+>  **可能出现的问题**
+>  * ```ERROR: Cannot find Ninja```
+>> 解决方法: ```sudo apt install ninja-build```
+>
+>  * ```ERROR: glib-2.56 gthread-2.0 is required to compile QEMU```
+>> 参考[此处](https://blog.csdn.net/fuxy3/article/details/104732541)
 
 
-另外由于Maix Dock的k210的特权级版本是1.9, 所以涉及到一些处理, 可以参考
-https://github.com/riscvarchive/riscv-qemu/wiki
+# 3.项目结构
 
-### 本地编译出的问题:
+之后来补齐
 
-```ERROR: Cannot find Ninja```
-解决方法: ```sudo apt install ninja-build```
-
-```ERROR: glib-2.56 gthread-2.0 is required to compile QEMU```
-https://blog.csdn.net/fuxy3/article/details/104732541
-
-# 2.项目结构
-
-xv6-qemu  
-├── backup                  //  草稿的备份, 有一些掉过的坑, 感兴趣可以瞅瞅  
-├── code                    //  代码  
-│   ├── app (暂时还没有创建)  //用户程序  
-│   ├── bootblock           // bootloader  
-│   └── kernel              // 内核  
-└── README.md  
-
-# 3.To Do List
+# 4.To Do List
 
 ## To Do
-* [ ] 实现SBI         entry.S
-* [ ] li和la问题       见kernel README entry.S部分
-* [ ] 替换掉锁里的编译器预设原子指令   见kernel spinlock部分
-* [ ] cprintf中有关%x、%p的部分有误, 暂时是32位的状态   见sbi、kernel中的console部分
-* [ ] 暂时使用的还是xv6fs
+* [ ] test
 
 ## Done
 
 
-# 4.Note
+# 5.Note
 
 ## qemu -m 参数
 
 手头版本使用`-m 6M`参数会导致dtb的地址为0x8000_0000, 取消此参数dtb的地址将会是默认值0x8700_0000。固我们暂时删除了这个参数。
 
-# 5.Temp
-
-## dtb解读
-```sudo apt  install device-tree-compiler```
-
 
 # 6.XV6中改进点
+
 
 1.  xv6采用了分页机制与虚拟地址的术语, 但没有实现页帧与磁盘的交换[P119]
 >由于没有实现“页帧与磁盘的交换”, 所以没有理论上不会出现所谓缺页的情况, 这里**暂不清楚**xv6是否缺乏对缺页的处理[P152]
