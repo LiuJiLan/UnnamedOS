@@ -20,5 +20,6 @@
 #define PLIC_MCOMPLETE(hart) (PLIC_BASE + 0x200004 + (hart) * 0x1000)
 
 void plicinit(void) {
-    *(uint32_t*)PLIC_MTHRESHOLD(hart) = 0;//允许所有等级中断
+    int hart = 0;//  准备重头写起了, 只是让它可以编译
+    *(unsigned int *)PLIC_MTHRESHOLD(hart) = 0;//允许所有等级中断
 }

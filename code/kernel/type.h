@@ -5,6 +5,11 @@
 //  Created by LiuJiLan on 2022/1/19.
 //
 
+//  我们对types.h的态度是
+//  (没错, 我们第一版把types写错成type了)
+//  原则上不去额外定义C固有类型的简写
+//  例如:unsigned char我们不重命名为uchar
+
 #ifndef type_h
 #define type_h
 

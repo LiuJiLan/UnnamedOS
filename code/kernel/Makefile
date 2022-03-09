@@ -14,6 +14,9 @@ KERNEL_C = \
 	proc.c \
 	spinlock.c \
 	plic.c \
+	fs.c \
+	bio.c \
+	sleeplock.c \
 	
 KERNEL_PY = \
 	test.py \

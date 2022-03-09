@@ -20,7 +20,7 @@
 //plic.c
 /**/void plicinit(void);
 
-//    struct buf;
+struct buf;
 struct context;
 //    struct file;
 //    struct inode;
@@ -28,10 +28,10 @@ struct context;
 struct proc;
 //    struct rtcdate;
 struct spinlock;
-//    struct sleeplock;
-//    struct stat;
-//    struct superblock;
-//
+struct sleeplock;
+struct stat;
+struct superblock;
+
 //    // bio.c
 //    void            binit(void);
 //    struct buf*     bread(uint, uint);
@@ -158,20 +158,11 @@ void            release(struct spinlock*);
 void            pushcli(void);
 void            popcli(void);
 
-//    // sleeplock.c
-//    void            acquiresleep(struct sleeplock*);
-//    void            releasesleep(struct sleeplock*);
-//    int             holdingsleep(struct sleeplock*);
-//    void            initsleeplock(struct sleeplock*, char*);
-
-//    // string.c
-//    int             memcmp(const void*, const void*, uint);
-//    void*           memmove(void*, const void*, uint);
-//    void*           memset(void*, int, uint);
-//    char*           safestrcpy(char*, const char*, int);
-//    int             strlen(const char*);
-//    int             strncmp(const char*, const char*, uint);
-//    char*           strncpy(char*, const char*, int);
+// sleeplock.c
+void            acquiresleep(struct sleeplock*);
+void            releasesleep(struct sleeplock*);
+int             holdingsleep(struct sleeplock*);
+void            initsleeplock(struct sleeplock*, char*);
 
 //  string.h的参数参考
 //  https://opensource.apple.com/source/xnu/xnu-6153.41.3/osfmk/libsa/string.h.auto.html

@@ -27,6 +27,7 @@
 #define NPROC        64  // maximum number of processes
 #define KSTACKSIZE 4096  // size of per-process kernel stack
 #define NCPU          2  // maximum number of CPUs
-
+#define MAXOPBLOCKS  10  // max # of blocks any FS op writes
+#define NBUF         (MAXOPBLOCKS*3)  // size of disk block cache
 
 #endif /* param_h */
