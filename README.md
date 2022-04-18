@@ -7,29 +7,37 @@
 * **xv6** 指 
 [xv6-public](https://github.com/mit-pdos/xv6-public)
 > 基于x86体系, 现已不再维护。  
+>
 > 最后的版本为`Commits on Aug 11, 2020`   
+>
 > 个人习惯称这个版本为`xv6`
 
 * **xv6-riscv** 指
 [xv6-riscv](https://github.com/mit-pdos/xv6-riscv)
 > 其与xv6相比更改了部分的实现  
+>
 > 我个人还是对xv6中的一些部分更加满意(比如console输出部分)
 
 * **书中版本** 指
 《操作系统原型——xv6分析与实验》中的xv6版本
 > 没有去仔细对比, 但通过对比`bio.c`中的`binit()`函数,
+>
 > 基本可以确定书中版本应该是
+>
 > `Commits on Sep 12, 2016`版本之前的版本
 
 * **rCore** 指
 [rCore](https://github.com/rcore-os/rCore)
 > 基于了SBI, 起始运行在0x8020_0000, S态  
+>
 > 而xv6-riscv则起始运行在0x8000_0000, M态  
+>
 > 但是要指出, **xv6-riscv的主核心还是在S态的**
 
 * **rCore教学版** 指
 [rCore-Tutorial-Book-v3](https://github.com/rcore-os/rCore-Tutorial-Book-v3)
 > rCore的教学版本, 在地址映射方面和rCore有一些区别  
+>
 > 教程直接可以看[这里](https://rcore-os.github.io/rCore-Tutorial-Book-v3/)
 
 
@@ -44,12 +52,15 @@ $ sudo apt install gcc-riscv64-unknown-elf
 
 * **GDB调试**
 > 参考rCore教程[gdb相关部分](https://rcore-os.github.io/rCore-Tutorial-deploy/docs/pre-lab/gdb.html)  
+>
 > 暂不推荐使用`gdb-multiarch`, 虽然其可以直接apt安装, 
 > 但是其使用中存在一些问题
 
 * **QEMU模拟器**
 > 参考rCore教程[qemu相关部分](https://rcore-os.github.io/rCore_tutorial_doc/chapter2/part5.html)  
+>
 > 注意: apt安装的qemu版本只有4.几  
+>
 > 这里放上我配环境的过程:
 ```
 wget https://download.qemu.org/qemu-6.1.1.tar.xz
@@ -95,7 +106,7 @@ make install
 >由于没有实现“页帧与磁盘的交换”, 所以没有理论上不会出现所谓缺页的情况, 这里**暂不清楚**xv6是否缺乏对缺页的处理[P152]
 2.  xv6没有实现对x86内存总量的测定(`kinit1()`与`kinit2()`)[P120]
 3.  xv6对物理页帧的管理非常简单(`kalloc()`与`kfree()`)[P126]
-4.  xv6的进程亲缘关系组织比Linux要简单得多, 只有父进程关系, 无法直接知道自己的子进程和兄弟进程[P157]
+4.  xv6的进程亲缘关系组织比Linux要简单得多, 只有父进程关系, 无法直接知道自己的子进程和兄弟进程[P52][P157]
 5.  对比Linux的文件系统, 由于Linux的VFS使用页缓存和文件映射页,...。xv6fs与虚存无关, 因此要相对简单得多。[P333]
 6.  ...xv6的块I/O层比较简单,...[P345]
 7.  日志操作使得每个文件的写操作都分成两次操作, 降低了写效率。(不知道有没有方法改进)[P401]
@@ -105,3 +116,5 @@ make install
 11. (inode的iget函数)...发现没有空闲的缓存,...实际上xv6只是panic而没有进行回收[P359]
 12. Linux系统的内存inode是VFS inode的抽象, 而磁盘上则可以是各种具体不同的ext2的inode、xfs的inode等等[P379]
 13. ...xv6的设备操作非常简陋, 只有读写操作, 而没有Linux设备中的ioctl()等操作[P379]
+14. (不知算不算是改进点)xv6并不是一个进程占有一个时间片, 比如进程A运行了半个时间片然后提前主动让出给进程B, 那B只能运行剩下的半个时间片然后被调度[P53]
+15. ..., 多个处理器共用一个就绪任务队列并按照轮询方式进行调度。...只是在调度中简单地处理负载均衡问题。[P56]
