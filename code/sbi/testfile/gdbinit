@@ -12,9 +12,9 @@ b*0x80200000
 
 #b main
 #在panic设断点, panic暂未实现, 用于debug
-b panic
+#b panic
 b trap_vector
-#b sbi_trap_handler
+b sbi_trap_handler
 #c
 
 #display/z $mepc
@@ -45,3 +45,5 @@ display/z $mip
 #display/z $a1
 
 #x/34zg 0x80000550
+
+b set_CLINT_mtimecmp_infinitely

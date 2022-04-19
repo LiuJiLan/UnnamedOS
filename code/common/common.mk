@@ -5,7 +5,7 @@ CFLAGS += -mcmodel=medany -mabi=lp64f -march=rv64imafc
 #k210手册中显示RV64IMAFDC
 
 QEMU = qemu-system-riscv64
-QFLAGS = -smp 2 -M virt -bios none
+QFLAGS = -smp 1 -M virt -bios none
 QFLAGS += -nographic
 #QFLAGS += -serial pipe:/tmp/guest
 

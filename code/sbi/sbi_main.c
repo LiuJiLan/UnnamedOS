@@ -7,6 +7,7 @@
 
 #include "sbi_types.h"
 #include "sbi_riscv.h"
+#include "clint.h"
 
 //  来自sbi_trap_handler的符号
 extern void trap_vector(void);
@@ -52,8 +53,24 @@ void sbimain(void) {
     w_pmpaddr0(~0x0);
     w_pmpcfg0(0xFUL);   //  A = TOR, X = W = R = 1
     
+    //  CLINT是当下设计中一定需要移植的部分
+    
     //  设置mtimecmp
     //  注意这个寄存器是内存映射式的
     //  注意:设置最大值不会完全关闭时钟中断
     //  注意与SBI手册时钟相关的部分的区别
+    set_CLINT_mtimecmp_infinitely();
+    //  沿用了之前的程序, 将mtimecmp设置到最大值
+    
+    //  设置mie
+    regs_t mie = 0;
+    mie |= 0x1 << 11 | 0x1 << 7 | 0x1 << 3;
+    w_mie(mie);
+    
+    while (1) {
+        //来测一下MTIP处理的乍样
+        set_CLINT_timer_interval(10000UL);
+    }
+    
+    asm volatile("mret");
 }

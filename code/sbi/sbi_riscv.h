@@ -47,7 +47,7 @@ static inline void w_mideleg(regs_t x) {
   asm volatile("csrw mideleg, %0" : : "r" (x));
 }
 
-//  读写mie
+//  读写mie & mip
 static inline regs_t r_mie() {
   regs_t x;
   asm volatile("csrr %0, mie" : "=r" (x) );
@@ -56,6 +56,17 @@ static inline regs_t r_mie() {
 
 static inline void w_mie(regs_t x) {
   asm volatile("csrw mie, %0" : : "r" (x));
+}
+
+//  读写mie
+static inline regs_t r_mip() {
+  regs_t x;
+  asm volatile("csrr %0, mip" : "=r" (x) );
+  return x;
+}
+
+static inline void w_mip(regs_t x) {
+  asm volatile("csrw mip, %0" : : "r" (x));
 }
 
 //  写mepc

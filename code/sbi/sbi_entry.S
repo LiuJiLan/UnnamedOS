@@ -38,4 +38,4 @@ start:
     csrw    mscratch, sp
 
     //  转跳到C语言主程序
-    //call    sbimain
+    call    sbimain

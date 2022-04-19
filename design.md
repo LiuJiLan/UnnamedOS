@@ -123,7 +123,9 @@ RVOS os实验从08开始 不需要在mret之前设置mstatus.MPIE(因为转跳�
 
 
 
-- mtime & mtimecmp : 此两个寄存器以内存映射的方式存在
+- CLINT中的msip、mtime & mtimecmp
+  - msip : 以内存映射的方式存在, hart间访问
+  - mtime & mtimecmp : 此两个寄存器以内存映射的方式存在, 用于定时器中断
 
 
 

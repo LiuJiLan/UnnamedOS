@@ -6,6 +6,8 @@ KERNEL_ASM = \
 
 KERNEL_C = \
 	sbi_main.c \
+	clint.c \
+	sbi_trap.c \
 	
 KERNEL_PY = \
 	#kernel_elf.py \
