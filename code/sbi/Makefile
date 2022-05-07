@@ -40,24 +40,23 @@ kernel_elf.S: kernel_elf.py
 %.S : %.py
 	@${PYTHON} $< > $@
 
-QFLAGS += -device loader,file=./sbi.bin,addr=0x80000000
-#QFLAGS += -device loader,file=../out/kernel.bin,addr=0x80200000
+QFLAGS += -device loader,file=../out/sbi.bin,addr=0x80000000
+QFLAGS += -device loader,file=../out/kernel.bin,addr=0x80200000
 
 kernel:
 	@cd ../kernel; make kernel.elf -B
 
 .PHONY : debug
-#debug: all  kernel
-debug: all
+debug: all  kernel
 	@$(OBJDUMP) -D -b binary -m riscv sbi.bin > dis.asm
 	@$(OBJDUMP) -S sbi.elf > sbi.asm
-	@riscv64-unknown-elf-readelf -a -W sbi.elf > sbi.txt
+	@$(READELF) -a -W sbi.elf > sbi.txt
 	@${QEMU} ${QFLAGS} -s -S &
 	@${GDB} sbi.elf -q -x ./testfile/gdbinit
 	
 .PHONY : run
 run: all
-	@riscv64-unknown-elf-readelf -a -W sbi.elf > sbi.txt
+	@$(READELF) -a -W sbi.elf > sbi.txt
 	@${QEMU} ${QFLAGS} -s -S &
 	@${GDB} sbi.elf ../out/kernel.elf -q -x ./testfile/gdbinit
 

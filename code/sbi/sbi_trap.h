@@ -43,7 +43,7 @@ struct sbi_trap_regs {
     unsigned long mepc;
     unsigned long mstatus;
     unsigned long mcause;
-};
+}__attribute__((packed));
 
 struct sbi_trap_info {
     unsigned long epc;
@@ -51,7 +51,7 @@ struct sbi_trap_info {
     unsigned long tval;
     unsigned long tval2;
     unsigned long tinst;
-};
+}__attribute__((packed));
 
 struct sbi_trap_regs * sbi_trap_handler(struct sbi_trap_regs * regs);
 

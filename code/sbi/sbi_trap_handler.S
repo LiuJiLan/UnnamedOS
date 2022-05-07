@@ -1,5 +1,5 @@
 //
-//  sbi_entry.S
+//  sbi_trap_handler.S
 //  xv6-qemu
 //
 //  Created by LiuJiLan on 2022/4/18.
@@ -26,8 +26,8 @@
     
     csrr    sp, mstatus
     srl     sp, sp, 11
-    and     sp, sp, 3
-    slti    sp, sp, 3
+    andi    sp, sp, 0b11
+    slti    sp, sp, 0b11
     addi    sp, sp, -1
     xor     t2, t2, t1
     and     sp, sp, t2
@@ -147,7 +147,7 @@
 
 .text
 .global trap_vector
-.align 2    //  4bytes对齐
+.align 2    //  4 bytes 对齐
 trap_vector:
     SETUP_SP_AND_SAVE_ORIGINAL_SP
 

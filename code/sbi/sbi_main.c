@@ -30,7 +30,10 @@ void sbimain(void) {
     //  设置medeleg & mideleg
     //  这两个寄存器都是WARL, 我们设置时就全写1就好了
     //  因为本质上我并不希望M处理太多
-    w_medeleg(~0x0);
+    //  但又不能像xv6-riscv那样设置,
+    //  因为ecall from S/M mode 还需用来调用SBI
+    regs_t medeleg = ~(1 << 9 | 1 << 11);
+    w_medeleg(medeleg);
     w_mideleg(~0x0);
     
     
@@ -66,11 +69,6 @@ void sbimain(void) {
     regs_t mie = 0;
     mie |= 0x1 << 11 | 0x1 << 7 | 0x1 << 3;
     w_mie(mie);
-    
-    while (1) {
-        //来测一下MTIP处理的乍样
-        set_CLINT_timer_interval(10000UL);
-    }
     
     asm volatile("mret");
 }
