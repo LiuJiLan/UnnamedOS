@@ -1,0 +1,43 @@
+set disassemble-next-line on
+target remote : 1234
+#b*0x80000000
+b*0x80200000
+
+#有页表才能设后面的断点
+b for_gdb_physical
+c
+
+b kmain
+b trap_vector
+#在panic设断点, panic暂未实现, 用于debug
+b panic
+c
+
+
+
+
+#display/z $t0
+#display/z $pc
+#display/z $t1
+#display/z $x5
+#display/z $x6
+#display/z $x7
+#que 0xffffffffc0202000
+#x/512zg 0x80002000
+#x/512zg 0x80001000
+
+#display/z $mcause
+#display/z $mstatus
+#display/z $mie
+#display/z $mip
+#display/z $mtvec
+#display/z $mideleg
+
+#b testfunc
+
+#b sbi_set_timer
+#b sbi_ecall
+
+
+display/z $medeleg
+display/z $mideleg
