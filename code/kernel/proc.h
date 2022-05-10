@@ -65,16 +65,11 @@ struct proc {
     enum proc_sched sched;
     enum proc_usable usable;
     
-    pid_t pid;          //  只是为了快速读取本进程的pid
-    pid_t ppid;         //  父进程
-    uint64 cpid_bitmap; //  子进程bitmap
+    pid_t pid;              //  只是为了快速读取本进程的pid
+    pid_t ppid;             //  父进程
+    uint64 cpid_bitmap;     //  子进程bitmap
     
-    uint64 wait_bitmap; //  wait的等待集合
-    //  注意这个等待集合与CASPP书中描述的等待集合不同
-    //  子进程不关心自己是否是父进程期待的等待
-    //  eg.父进程waitpid(a), 而exit的是进程b
-    //  子进程不会去查父进程等待的是不是自己
-    //  而仅是把自己加入wait_bitmap等待合集
+    uint64 zombie_bitmap;   //  zombie子进程集合
     
     int xstate;         //  返回状态, 用于父进程
     
