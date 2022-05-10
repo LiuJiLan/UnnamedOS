@@ -42,6 +42,16 @@ entry:
     sub     sp, t0, t1
     
     csrw    sscratch, sp
+    
+    //  开启SUM位, 让内核可以访问用户态
+    //  有无必要开启这个功能有待商榷
+    //  因为本质上内核回收了所有的物理内存,
+    //  也就是说有一个内核权限和用户权限同时指向了同一个物理地址
+    //  所以本质上我们不需要开启这个位
+    csrr    t0, sstatus
+    li      t1, 0x1 << 18   //  SUM
+    or      t0, t0, t1
+    csrw    sstatus, t0
 
     //  加载stvec
     lui     t0, %hi(trap_vector)

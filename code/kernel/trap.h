@@ -40,9 +40,9 @@ struct trap_regs {
     unsigned long t4;
     unsigned long t5;
     unsigned long t6;
-    unsigned long mepc;
-    unsigned long mstatus;
-    unsigned long mcause;
+    unsigned long sepc;
+    unsigned long sstatus;
+    unsigned long scause;
 }__attribute__((packed));
 
 /*

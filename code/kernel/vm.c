@@ -191,6 +191,105 @@ void vm_recursive_cleanup(pte_t * pte) {
 void vm_delete_upgtbl(pgtbl_t upgtbl) {
     int end = PX(2, V_P_DIFF);
     for (int i = 0; i < end; i++) {
+        //  递归的删除所有用户部分
         vm_recursive_cleanup(&upgtbl[i]);
     }
+    //  回收自己
+    kfree((char*)upgtbl);
+}
+
+//  在upgtbl上映射kva到uva
+int vm_kva_map_uva(pgtbl_t upgtbl, uptr_t kva, uptr_t uva) {
+    //  注意需要页对齐
+    pte_t * pte = NULL;
+    
+    int perm = PTE_R | PTE_W | PTE_X | PTE_U;
+    
+    for (int level = 2; level > 0; level--) {
+        pte = &upgtbl[PX(level, uva)];
+        if (*pte & PTE_V) {
+            upgtbl = (pgtbl_t)(P2V(PTE2PA(*pte)));
+            //进入下一级的页表
+        } else {
+            if ( (upgtbl = (pte_t *)kalloc()) == NULL ) {
+                return -1;
+            }
+            //  alloc下一级的页表
+            //  注意此时pgtbl用的地址是内核空间的虚拟地址
+            memset(upgtbl, 0, PGSIZE);
+            *pte = PA2PTE(V2P(upgtbl)) | PTE_V;
+        }
+    }
+    
+    pte = &upgtbl[PX(0, uva)];
+    
+    if (*pte & PTE_V) {
+        return -1;  //  remap
+    }
+    
+    *pte = PA2PTE(V2P(kva)) | PTE_V | perm;
+    
+    return 0;
+}
+
+//  根据upgtbl返回对应uva的kva
+//  返回NULL表示没有映射
+void * vm_uva_inverse_kva(pgtbl_t upgtbl, uptr_t uva) {
+    pte_t * pte = NULL;
+    
+    for (int level = 2; level > 0; level--) {
+        pte = &upgtbl[PX(level, uva)];
+        if (*pte & PTE_V) {
+            upgtbl = (pgtbl_t)(P2V(PTE2PA(*pte)));
+            //进入下一级的页表
+        } else {
+            return NULL;
+        }
+    }
+    
+    pte = &upgtbl[PX(0, uva)];
+    return (void *)P2V((PTE2PA(*pte)));
+}
+
+//  虚拟地址条件下的内存复制
+//  dir指方向, 0则k->u, 1则k<-u
+//  返回值0成功, -1失败
+//  注意, 如果失败, 不能确定内存被复制了或没被复制
+int vm_memmove(pgtbl_t upgtbl, uptr_t kva, uptr_t uva, size_t n, int dir) {
+    //  注意不管长度如何, 只考虑uva, 因为只有uva才有可能是不连续的
+    //  不必在意kva是否跨越两个不同的页
+    uptr_t uva_pg_start = PGROUNDDOWN(uva);
+    uptr_t uva_pg_end = PGROUNDUP(uva + n);
+    uptr_t uva_pg_offset = uva - uva_pg_start;
+    
+    for (uptr_t uva_pg = uva_pg_start; uva_pg < uva_pg_end; uva_pg += PGSIZE) {
+        
+        void * u2kva = vm_uva_inverse_kva(upgtbl, uva_pg);
+        if (!u2kva) {
+            return -1;
+        }
+        
+        size_t len;
+        if (uva_pg_offset + n < PGSIZE) {
+            len = n;
+        } else {
+            len = PGSIZE - uva_pg_offset;
+        }
+        
+        char * u = (char*)u2kva + uva_pg_offset;
+        char * k = (char*)kva;
+        
+        if (dir) {
+            memmove(k, u, len);
+        } else {
+            memmove(u, k, len);
+        }
+        
+        n -= len;
+        kva += len;
+        
+        uva_pg_offset = 0;  //  第一次用完这个量后要给0
+    }
+    
+    return 0;
 }

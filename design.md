@@ -393,6 +393,72 @@ static const char * const task_state_array[] = {
 
 
 
+### SYS_clone
+
+```
+#	锁: 需要获取多个进程项
+
+flags, stack, ptid, tls, ctid
+除stack之外忽略
+注意:用户程序中传入的stack是栈低
+而系统调用中的stack是栈顶, 中间已经有过转化
+
+找到一个usable进程
+复制本进程
+设置父进程等参数
+设置栈
+if stack == 0:
+	sp不变 # 保留父进程的状态
+else 
+	sp = stack
+
+成功返回子进程ID
+失败返回-1
+
+对子进程返回0
+```
+
+
+
+### SYS_exit
+
+```
+#	锁: 需要获取多个进程项 (因为要对父进程进行写操作)
+
+设自己的xstate为返回值
+将自己的所有子进程的ppid改为自己的父进程
+将自己所有的子进程加入父进程的cpid_bitmap (由于我们的设计, 只需要&就可以了)
+将自己所有的等待集合加入父进程的等待集合 (由于我们的设计, 只需要&就可以了)
+设置自己的一些值确保进入ZOMBIE
+如果父进程 处于sleep 且 sleep的原因是SYS_wait4 (通过查看寄存器得知)
+设置父进程为RUNNABLE, 并从系统调用开始重新执行(不是重新开始调度, 而是直接以内核态重新运行系统调用的handle)
+```
+
+
+
+### SYS_wait4
+
+```
+#	锁: 需要获取多个进程项 (因为要对父进程进行写操作)
+
+pid_t pid, int *wstatus, int options, struct rusage *rusage
+
+*wstatus 存放对应子进程的返回值, 可以给NULL; 注意不支持对应的分析功能, 假定一定是通过exit或许return退出的
+options支持:
+0, WNOHANG, WUNTRACED (WCONTINUED暂不支持)
+
+# 在我们代码中我们所说的"等待集合"是指处于ZOMBIE状态的子进程
+# 在以下伪代码中我们所说的"等待集合"指的是本进程期待的子进程集合
+
+if 没有子进程
+	直接返回-1
+	
+if 没有
+
+```
+
+
+
 
 
 # 储存管理
