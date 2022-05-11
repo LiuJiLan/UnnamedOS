@@ -10,6 +10,8 @@
 #include "kalloc.h"
 #include "riscv.h"
 #include "vm.h"
+#include "proc.h"
+#include "trap.h"
 
 
 void panic(char * s) {  //  用于GDB来debug
@@ -37,11 +39,13 @@ void kmain(void) {
     
     panic("GOOD");
     
-    char * p = (void*)0xFFFFFFFFC0600000U;
-    p -= 12;
-    *p = 12;
+    procinit();
     
-    panic("GOOD2");
+    struct trap_regs regs;
+    pre_first_run_proc(&regs);
+    proc_find_runnable_to_run(&regs, 0);
+    
+    panic("GOOD");
     
     while (1) {
     }   

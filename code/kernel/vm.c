@@ -319,3 +319,8 @@ int vm_deep_copy(pgtbl_t u_dst, pgtbl_t u_src) {
     
     return 0;
 }
+
+void vm_2_proc_upgtbl(pgtbl_t upgtbl) {
+    w_satp(LOAD_SATP(V2P(upgtbl)));
+    sfence_vma();
+}

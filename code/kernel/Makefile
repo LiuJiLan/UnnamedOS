@@ -3,6 +3,7 @@ include ../common/common.mk
 KERNEL_ASM = \
 	entry.S \
 	trap_handler.S \
+	initcode.S \
 
 KERNEL_C = \
 	kmain.c \
@@ -11,6 +12,7 @@ KERNEL_C = \
 	spinlock.c \
 	kalloc.c \
 	vm.c \
+	proc.c \
 	string.c \
 	
 KERNEL_PY = \
@@ -65,3 +67,6 @@ clean:
 	@echo "Remember to delete the files in ../out ."
 	@rm *.o *.bin *.asm *.elf *.txt $(TRUSHS)
 
+initcode.S:
+	# initcode.S必须确保是最新的
+	python3 ../../script/init_proc.py

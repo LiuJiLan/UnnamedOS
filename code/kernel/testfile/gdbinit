@@ -1,5 +1,8 @@
 set disassemble-next-line on
 target remote : 1234
+
+set print pretty on
+
 #b*0x80000000
 b*0x80200000
 
@@ -13,7 +16,7 @@ b trap_vector
 b panic
 c
 
-
+b post_trap_handler
 
 
 #display/z $t0

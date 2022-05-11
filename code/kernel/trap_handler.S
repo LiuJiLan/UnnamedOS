@@ -160,7 +160,7 @@ trap_vector:
     call    trap_handler
 
 .global post_trap_handler   //  用于给进程提供函数
-post_trap_handler
+post_trap_handler:
 
 trap_exit:
     RESTORE_GENERAL_REGS_EXCEPT_A0_T0

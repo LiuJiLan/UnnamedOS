@@ -2,3 +2,5 @@
 xv6-qemu.xcodeproj/
 .DS_Store
 code/out/
+code/kernel/initcode.S
+code/user/src/init.bin

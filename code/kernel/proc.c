@@ -10,9 +10,16 @@
 #include "vm.h"
 #include "string.h"
 #include "kalloc.h"
+#include "hart.h"
+#include "riscv.h"
+
+extern void panic(char *s);
 
 extern void post_trap_handler(struct trap_regs *);
 //  在trap_handler.S中, a0作为恢复CPU上下文的指针
+
+extern char initcode[];
+extern char initcode_len[];
 
 struct {
     struct spinlock lock;
@@ -36,6 +43,8 @@ struct {
 //      寻找部分不能上锁的原因是:
 //      极端情况下, 寻找目标进程的CPU(们)不断成功获取进程表的锁,
 //      而能给进程表提供runnable的CPU却一直不幸的获取不了锁
+//  #3  情况2下, 如果有必须要解开单个进程的锁才能进行的操作
+//      如proc_clear_proc, 则进程表锁应该在所有操作执行完后再释放
 
 
 //  考虑到后期兼容, 有三个特殊进程
@@ -62,8 +71,20 @@ struct {
 
 //  注意我们现在的这个进程表是静态的
 
-
 //  https://www.likecs.com/show-203947168.html
+
+void proc_clear_proc(pid_t pid);
+int proc_load_bin(pid_t pid, char* kva_start, size_t len);
+
+//  每个CPU在第一次运行进程之前应该临时的给出一个regs的结构体
+//  注意, 应该确保这个trap_regs结构体的生命周期
+void pre_first_run_proc(struct trap_regs * regs) {
+    regs->tp = r_tp();
+    regs_t sstatus = r_sstatus();
+    sstatus |= 0x1U << 5;    //  SPIE, 开中断
+    sstatus &= ~(0x1U << 8);    //  SPP = USER
+    regs->sstatus = sstatus;
+}
 
 void procinit(void) {
     initlock(&kproc.lock, "kproc");
@@ -71,25 +92,7 @@ void procinit(void) {
     struct proc * p = NULL;
     
     for (int i = 0; i < NPROC; i++) {
-        p = &kproc.proctbl[i];    //  只是为了写程序方便
-        p->state = ZOMBIE;
-        p->sched = UNSCHEDULABLE;
-        p->usable = USABLE;
-        
-        p->pid = i;
-        p->ppid = 0;
-        p->cpid_bitmap = 0;
-        
-        p->zombie_bitmap = 0;
-        
-        p->xstate = 0;
-        
-        p->remain_time = 0;
-        
-        proc_context_copyin(NULL, &p->context);
-        p->upgtbl = NULL;
-        
-        initlock(&p->lock, "proc");
+        proc_clear_proc(i);
     }
     
     /*
@@ -136,11 +139,16 @@ void procinit(void) {
     p = &kproc.proctbl[1];
     p->ppid = 0;
     p->upgtbl = vm_init_upgtbl();
-    //proc_load_bin(pid, char * start, size);
+    int ret = proc_load_bin(1, initcode, *(uint64 *)initcode_len);
     //  加载二进制形式的程序代码
+    if (ret == -1) {
+        panic("FUCK!");
+    }
+    
     p->state = RUNNING;
     p->sched = SCHEDULABLE;
     p->usable = UNUSABLE;
+    p->remain_time = DEFAULT_TIME;
 }
 
 //  初始化一个进程
@@ -148,17 +156,17 @@ void procinit(void) {
 //  (后续删除一个进程的时候页表却会被回收)
 //  将进程设置为USABLE(也可以说是DEAD)的状态
 //  只能用于不带锁的初始化
-void proc_init_proc(pid_t pid) {
-    struct proc * p = &kproc.proctbl[pid];
-    memset(p, 0, sizeof(struct proc));
-    p->pid = pid;
-    initlock(&p->lock, "proc");
-}
-
 void proc_clear_proc(pid_t pid) {
     struct proc * p = &kproc.proctbl[pid];
-    memset(p, 0, sizeof(struct proc) - sizeof(struct spinlock));
+    memset(p, 0, sizeof(struct proc));
+    
+    p->state = ZOMBIE;
+    p->sched = UNSCHEDULABLE;
+    p->usable = USABLE;
+    
     p->pid = pid;
+    
+    initlock(&p->lock, "proc");
 }
 
 //  将 trap的上下文 复制到 进程的上下文
@@ -247,12 +255,15 @@ int proc_load_bin(pid_t pid, char* kva_start, size_t len) {
     struct proc * proc = &kproc.proctbl[pid];
     pgtbl_t upgtbl = proc->upgtbl;
     
-    uptr_t uva_pg_start = PGROUNDDOWN((uptr_t)kva_start);
+    uptr_t DEFAULT_ENTRY = 0x1000U;
+    
+    uptr_t uva_pg_start = PGROUNDDOWN(DEFAULT_ENTRY);
     uptr_t uva_pg_end = PGROUNDUP(uva_pg_start + len);
     
     for (uptr_t uva_pg = uva_pg_start; uva_pg < uva_pg_end; uva_pg += PGSIZE) {
         uptr_t kva = (uptr_t)kalloc();
         if (!kva) {
+            panic("1");
             return -1;
         }
         vm_kva_map_uva(upgtbl, kva, uva_pg);
@@ -261,17 +272,20 @@ int proc_load_bin(pid_t pid, char* kva_start, size_t len) {
     //  映射用户栈
     uptr_t kva = (uptr_t)kalloc();
     if (!kva) {
+        panic("2");
         return -1;
     }
     vm_kva_map_uva(upgtbl, kva, MAXUVA - PGSIZE);
     
     int ret = vm_memmove(upgtbl, (uptr_t)kva_start, 0x1000U, len, 0);
     if (ret == -1) {
+        panic("3");
         return ret;
     }
     
     proc->PROC_ENTRY = 0x1000U;
-    proc->PROC_BRK = proc->PROC_ENTRY + len;
+    proc->PROC_END = proc->PROC_ENTRY + len;
+    proc->PROC_BRK = proc->PROC_END;
     proc->PROC_CODE_PG = uva_pg_start;
     proc->PROC_CODE_SZ = (int)((uva_pg_end - uva_pg_start) / PGSIZE);
     
@@ -297,10 +311,21 @@ void proc_find_runnable_to_run(struct trap_regs * regs, pid_t pid) {
             release(&kproc.lock);
             if ((p + i)->sched == SCHEDULABLE) {
                 //  带锁后重新确认
+                
                 (p + i)->sched = UNSCHEDULABLE;
                 release(&kproc.proctbl[i].lock);
                 //  对单进程做完写操作就可以放锁了
+                
+                my_hart()->myproc = (p + i);
                 proc_context_copyout(regs, &(p + i)->context);
+                vm_2_proc_upgtbl((p + i)->upgtbl);
+                
+                char test[3];
+                test[0] = ':';
+                test[1] = '0' + i;
+                test[2] = '\0';
+                panic(test);
+                
                 post_trap_handler(regs);
             } else {
                 continue;
@@ -319,7 +344,9 @@ void proc_find_runnable_to_run(struct trap_regs * regs, pid_t pid) {
                 if ((p + i)->sched == SCHEDULABLE) {
                     (p + i)->sched = UNSCHEDULABLE;
                     release(&kproc.proctbl[i].lock);
+                    my_hart()->myproc = (p + i);
                     proc_context_copyout(regs, &(p + i)->context);
+                    vm_2_proc_upgtbl((p + i)->upgtbl);
                     post_trap_handler(regs);
                 } else {
                     continue;
@@ -332,15 +359,41 @@ void proc_find_runnable_to_run(struct trap_regs * regs, pid_t pid) {
 //  注意不是fork系统调用
 //  要求两个进程已经被上锁
 //  成功返回0, 失败返回-1
+//  (清理工作应该在ZOMBIE -> DEAD的阶段就完成)
 int proc_fork(pid_t ppid, pid_t cpid) {
     struct proc * pproc = &kproc.proctbl[ppid];
     struct proc * cproc = &kproc.proctbl[cpid];
     
+    cproc->usable = UNUSABLE;
+    //  早些更改状态, 其他CPU读到后尝试上锁(只是节约时间)
+    
     //  设置好父子进程关系
     cproc->ppid = ppid;
+    pproc->cpid_bitmap |= 0x1U << cpid;
     
-    pproc->cpid_bitmap
+    cproc->remain_time = DEFAULT_TIME;
     
+    cproc->context = pproc->context;
+    
+    cproc->upgtbl = vm_init_upgtbl();
+    if (cproc->upgtbl == NULL) {
+        return -1;
+    }
+    int ret = vm_deep_copy(cproc->upgtbl, pproc->upgtbl);
+    if (ret == -1) {
+        return -1;
+    }
+    
+    cproc->PROC_ENTRY = pproc->PROC_ENTRY;
+    cproc->PROC_END = pproc->PROC_END;
+    cproc->PROC_BRK = pproc->PROC_BRK;
+    cproc->PROC_CODE_PG = pproc->PROC_CODE_PG;
+    cproc->PROC_CODE_SZ = pproc->PROC_CODE_SZ;
+    
+    cproc->PROC_STACK_TOP = pproc->PROC_STACK_TOP;
+    
+    cproc->state = RUNNING;
+    cproc->sched = SCHEDULABLE;
     
     return 0;
 }

@@ -90,22 +90,19 @@ struct proc {
     pgtbl_t upgtbl;
     
     ptr_t PROC_ENTRY;    //  code的实际entry地址
-    ptr_t PROC_BRK;      //  code的实际结尾
+    ptr_t PROC_END;      //  code的实际结尾
+    ptr_t PROC_BRK;      //  brk的位置
     ptr_t PROC_CODE_PG;  //  code分配的页起始地址
     int PROC_CODE_SZ;    //  code分配了都少个页
     
     ptr_t PROC_STACK_TOP;//  用户程序栈顶
     //int PROC_STACK_SZ;    //  栈用了多少页, 我们暂时不设置这个值
     
-    //  spinlock必须是proc结构体中的最后一个
     struct spinlock lock;
 };
-//  我们会使用一些方法来清空一个进程,
-//  如果编译器不改变元素顺序的话
-//  (即使有对齐优化, 只要顺序不变就好)
-//  可以用memset(sizeof(struct proc) - sizeof(struct spinlock))来代替
-//  根据https://www.quora.com/Why-dont-C-C++-compilers-automatically-reduce-the-padding-bytes-in-structs-by-reordering-their-members
-//  以及相关资料, 顺序应该是不改变的
+
+void pre_first_run_proc(struct trap_regs * regs);
+void procinit(void);
 
 void proc_context_copyin(struct trap_regs * regs, struct context * proc_context);
 void proc_context_copyout(struct trap_regs * regs, struct context * proc_context);
