@@ -1,3 +1,15 @@
+# 设计
+
+---
+
+**注意: 本文件并非全部纯手工书写, 部分样式直接由MarkDown书写软件自动转化。**
+
+**固: 直接阅读Raw Code会略显混乱, 请使用相应软件或网站查看本文档。**
+
+
+
+
+
 strict mode in typora `between # and header must be a blank`
 
 
@@ -416,6 +428,15 @@ else
 失败返回-1
 
 对子进程返回0
+
+#	详细代码
+
+找到一个usable进程
+if	找不到合适的usable进程:
+	直接返回-1
+复制本进程
+if 	复制进程失败
+	直接返回-1
 ```
 
 
@@ -447,11 +468,24 @@ pid_t pid, int *wstatus, int options, struct rusage *rusage
 options支持:
 0, WNOHANG, WUNTRACED (WCONTINUED暂不支持)
 
-if 没有子进程
+if 没有子进程:
 	直接返回-1
 	
-if 没有
-
+if 没有等待集合满足要求:
+	if WNOHANG:
+		立即返回0
+	else 
+		自己进入sleep
+	
+if 满足要求:
+	# 无论是否是多个满足要求, 只返回满足集合中的第一个(pid最小)
+	*wstatus = c_proc.xstate
+	cpid = c_proc.pid
+	if	WUNTRACED:
+		return cpid
+	else:
+		将cpid的那个进程从ZOMBIE变为DEAD
+		return cpid
 ```
 
 

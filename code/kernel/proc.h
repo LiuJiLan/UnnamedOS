@@ -60,10 +60,21 @@ struct context {
     unsigned long sepc; //  相当于保存了pc
 }__attribute__((packed));
 
+
+//  与状态有关的必须都是volatile变量
+//  虽然除此之外的变量也有可能被多个CPU改变
+//  但是我们对kproc上的锁可以保证
+//  这些变量在第一次读与后续的写回期间不会被其他CPU更改
+//
+//  但是有关状态的变量我们有可能会在获取锁前读一次,
+//  然后根据这次读的结果去判断有没有必要去尝试它
+//  (如果粗读的结果就不是我们想要的我们就没有必要上锁再做二次确认)
+//  在第一次读取和上锁后的第二次读之间, 不能确保其不被其他CPU更改
+//  所以一定不能使用寄存器中的值, 需要用volatile来确保
 struct proc {
-    enum proc_state state;
-    enum proc_sched sched;
-    enum proc_usable usable;
+    volatile enum proc_state state;
+    volatile enum proc_sched sched;
+    volatile enum proc_usable usable;
     
     pid_t pid;              //  只是为了快速读取本进程的pid
     pid_t ppid;             //  父进程
@@ -86,12 +97,20 @@ struct proc {
     ptr_t PROC_STACK_TOP;//  用户程序栈顶
     //int PROC_STACK_SZ;    //  栈用了多少页, 我们暂时不设置这个值
     
-    
+    //  spinlock必须是proc结构体中的最后一个
     struct spinlock lock;
 };
+//  我们会使用一些方法来清空一个进程,
+//  如果编译器不改变元素顺序的话
+//  (即使有对齐优化, 只要顺序不变就好)
+//  可以用memset(sizeof(struct proc) - sizeof(struct spinlock))来代替
+//  根据https://www.quora.com/Why-dont-C-C++-compilers-automatically-reduce-the-padding-bytes-in-structs-by-reordering-their-members
+//  以及相关资料, 顺序应该是不改变的
 
 void proc_context_copyin(struct trap_regs * regs, struct context * proc_context);
 void proc_context_copyout(struct trap_regs * regs, struct context * proc_context);
 int proc_load_bin(pid_t pid, char* kva_start, size_t len);
+
+void proc_find_runnable_to_run(struct trap_regs * regs, pid_t pid);
 
 #endif /* proc_h */

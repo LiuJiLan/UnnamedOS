@@ -50,6 +50,7 @@ void vm_delete_upgtbl(pgtbl_t upgtbl);
 int vm_kva_map_uva(pgtbl_t upgtbl, uptr_t kva, uptr_t uva);
 void * vm_uva_inverse_kva(pgtbl_t upgtbl, uptr_t uva);
 int vm_memmove(pgtbl_t upgtbl, uptr_t kva, uptr_t uva, size_t n, int dir);
+int vm_deep_copy(pgtbl_t u_dst, pgtbl_t u_src);
 
 #endif /* vm_h */
 

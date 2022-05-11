@@ -11,6 +11,9 @@
 #include "string.h"
 #include "kalloc.h"
 
+extern void post_trap_handler(struct trap_regs *);
+//  在trap_handler.S中, a0作为恢复CPU上下文的指针
+
 struct {
     struct spinlock lock;
     struct proc proctbl[64];
@@ -77,7 +80,7 @@ void procinit(void) {
         p->ppid = 0;
         p->cpid_bitmap = 0;
         
-        p->wait_bitmap = 0;
+        p->zombie_bitmap = 0;
         
         p->xstate = 0;
         
@@ -138,6 +141,24 @@ void procinit(void) {
     p->state = RUNNING;
     p->sched = SCHEDULABLE;
     p->usable = UNUSABLE;
+}
+
+//  初始化一个进程
+//  注意, 页表不会被alloc
+//  (后续删除一个进程的时候页表却会被回收)
+//  将进程设置为USABLE(也可以说是DEAD)的状态
+//  只能用于不带锁的初始化
+void proc_init_proc(pid_t pid) {
+    struct proc * p = &kproc.proctbl[pid];
+    memset(p, 0, sizeof(struct proc));
+    p->pid = pid;
+    initlock(&p->lock, "proc");
+}
+
+void proc_clear_proc(pid_t pid) {
+    struct proc * p = &kproc.proctbl[pid];
+    memset(p, 0, sizeof(struct proc) - sizeof(struct spinlock));
+    p->pid = pid;
 }
 
 //  将 trap的上下文 复制到 进程的上下文
@@ -262,3 +283,64 @@ int proc_load_bin(pid_t pid, char* kva_start, size_t len) {
     return 0;
 }
 
+//  由于我们暂时采取的是不断的按顺序寻找
+//  pid用于避免较小pid号的刚刚被标为RUNNABLE的进程马上被重新唤醒
+//  而导致较大的pid号的进程不容易被选中的情况
+void proc_find_runnable_to_run(struct trap_regs * regs, pid_t pid) {
+    struct proc * p = &kproc.proctbl[0];
+    
+    //  第一次循环
+    for (int i = (pid + 1) % NPROC; i < NPROC; i++) {
+        if ((p + i)->sched == SCHEDULABLE) {
+            acquire(&kproc.lock);
+            acquire(&kproc.proctbl[i].lock);
+            release(&kproc.lock);
+            if ((p + i)->sched == SCHEDULABLE) {
+                //  带锁后重新确认
+                (p + i)->sched = UNSCHEDULABLE;
+                release(&kproc.proctbl[i].lock);
+                //  对单进程做完写操作就可以放锁了
+                proc_context_copyout(regs, &(p + i)->context);
+                post_trap_handler(regs);
+            } else {
+                continue;
+            }
+        }
+    }
+    
+    //  死循环, 有合适的就会跳出, 不会有真正的返回
+    //  因为trap的上下文被改写了
+    while (1) {
+        for (int i = 0; i < NPROC; i++) {
+            if ((p + i)->sched == SCHEDULABLE) {
+                acquire(&kproc.lock);
+                acquire(&kproc.proctbl[i].lock);
+                release(&kproc.lock);
+                if ((p + i)->sched == SCHEDULABLE) {
+                    (p + i)->sched = UNSCHEDULABLE;
+                    release(&kproc.proctbl[i].lock);
+                    proc_context_copyout(regs, &(p + i)->context);
+                    post_trap_handler(regs);
+                } else {
+                    continue;
+                }
+            }
+        }
+    }
+}
+
+//  注意不是fork系统调用
+//  要求两个进程已经被上锁
+//  成功返回0, 失败返回-1
+int proc_fork(pid_t ppid, pid_t cpid) {
+    struct proc * pproc = &kproc.proctbl[ppid];
+    struct proc * cproc = &kproc.proctbl[cpid];
+    
+    //  设置好父子进程关系
+    cproc->ppid = ppid;
+    
+    pproc->cpid_bitmap
+    
+    
+    return 0;
+}

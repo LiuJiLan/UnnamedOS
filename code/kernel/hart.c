@@ -14,7 +14,7 @@ void init_hart(void) {
     for (struct hart * i = harts; i < harts + N_HART; i++) {
         i->n_intr = 0;
         i->old_intr = 0;
-        i->pid = NULL;
+        i->myproc = NULL;
     }
 }
 

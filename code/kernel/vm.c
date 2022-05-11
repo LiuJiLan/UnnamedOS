@@ -189,7 +189,9 @@ void vm_recursive_cleanup(pte_t * pte) {
 }
 
 void vm_delete_upgtbl(pgtbl_t upgtbl) {
-    int end = PX(2, V_P_DIFF);
+    int end = PX(2, MAXUVA);
+    //  注意MAXUVA并不是合法的虚拟地址,
+    //  但是PX本身只截取了一部分, 所以没事
     for (int i = 0; i < end; i++) {
         //  递归的删除所有用户部分
         vm_recursive_cleanup(&upgtbl[i]);
@@ -289,6 +291,30 @@ int vm_memmove(pgtbl_t upgtbl, uptr_t kva, uptr_t uva, size_t n, int dir) {
         kva += len;
         
         uva_pg_offset = 0;  //  第一次用完这个量后要给0
+    }
+    
+    return 0;
+}
+
+//  只能用于两个用户态页表
+//  ret 0成功, ret -1失败
+//  u_dst的用户态部分必须是被清空的
+int vm_deep_copy(pgtbl_t u_dst, pgtbl_t u_src) {
+    uptr_t uva_pg_start = 0x0U;
+    uptr_t uva_pg_end = MAXUVA;
+    
+    for (uptr_t uva_pg = uva_pg_start; uva_pg < uva_pg_end; uva_pg += PGSIZE) {
+        void * mapped = vm_uva_inverse_kva(u_src, uva_pg);
+        if (mapped) {   //  mapped != NULL说明被映射过了
+            void * new_kva = kalloc();
+            if (!new_kva) { //  kalloc() == NULL
+                return -1;
+            }
+            if (vm_kva_map_uva(u_dst, (uptr_t)new_kva, uva_pg) == -1) {
+                return -1;
+            }
+            memmove(new_kva, mapped, PGSIZE);
+        }
     }
     
     return 0;
