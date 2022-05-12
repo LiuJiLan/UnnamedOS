@@ -68,34 +68,36 @@ void STIP_handler(struct trap_regs * regs) {
     
     if (--myproc->remain_time == 0) {
         //  时间片到
-        vm_2_kpgtbl();
         
-        panic("time out");
+        vm_2_kpgtbl();
         
         //  注意, 此处我们没有上锁就修改了时间片,
         //  是因为时间片一旦被创建就是一个进程绝对私有的
-        pid_t my_pid = myproc->pid;
-        
-        proc_acquire_proctbl_lock();
-        proc_acquire_proc_lock(my_pid);
-        proc_release_proctbl_lock();
-        
+        //  同理进程的context也可以优先保存
         proc_context_copyin(regs, &myproc->context);
-        myproc->remain_time = DEFAULT_TIME;
-        myproc->sched = SCHEDULABLE;
         
+        pid_t my_pid = myproc->pid;
         my_hart()->myproc = NULL;
         
-        proc_release_proc_lock(my_pid);
+        panic("time out");
         
+        proc_timeout(my_pid);
         proc_find_runnable_to_run(regs, my_pid);
     } else {
+        //  时间片用完的情况在proc_find_runnable_to_run
+        //  重设了时间片
         sbi_set_timer(DEFAULT_SBI_TIMER);
     }
-    
-    //  else do nothing
 }
 
 void U_ECALL_handler(struct trap_regs * regs) {
+    struct proc * myproc = my_hart()->myproc;
+    pid_t my_pid = myproc->pid;
+    
+    //  保存当前进程的context
+    proc_context_copyin(regs, &myproc->context);
+    
+    //  为了之后函数的通用性我们必须在这里保存
+    //  因为不想频繁上锁改进了不少东西
     
 }

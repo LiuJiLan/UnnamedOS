@@ -76,17 +76,17 @@ struct proc {
     volatile enum proc_sched sched;
     volatile enum proc_usable usable;
     
-    pid_t pid;              //  只是为了快速读取本进程的pid
+    pid_t pid;              //  只是为了快速读取本进程的pid //#
     pid_t ppid;             //  父进程
     uint64 cpid_bitmap;     //  子进程bitmap
     
     uint64 zombie_bitmap;   //  zombie子进程集合
     
-    int xstate;         //  返回状态, 用于父进程
+    int xstate;         //  返回状态, 用于父进程 //#
     
-    int remain_time;    //  剩余时间片, 用于调度
+    int remain_time;    //  剩余时间片, 用于调度 //#
     
-    struct context context;
+    struct context context; //#
     pgtbl_t upgtbl;
     
     ptr_t PROC_ENTRY;    //  code的实际entry地址
@@ -100,6 +100,15 @@ struct proc {
     
     struct spinlock lock;
 };
+//  标#的条目是被认为这个进程一旦被创立就一定会是私有的量
+//  由于对进程的写操作是一定要上锁的(部分变量也要上锁读)
+//  但暂时的设计是想要上单个进程的锁就需要给整个表先上锁(虽然很快就会释放)
+//  但本身抢占锁本身就是一件有些浪费时间的事, 所以我们设计了一些变量
+//  (可能不止标出的这些)只要判定他们不会发生多CPU冲突, 就可以不上锁的处理
+//  例如:
+//  ppid就是一个读写都需上锁的变量
+//  因为父进程变为ZOMBIE时, 子进程有可能变为孤儿进程,
+//  所以在(父进程的)exit系统调用中父进程会更改所有子进程的ppid
 
 void pre_first_run_proc(struct trap_regs * regs);
 void procinit(void);
@@ -113,5 +122,7 @@ void proc_acquire_proctbl_lock(void);
 void proc_release_proctbl_lock(void);
 void proc_acquire_proc_lock(pid_t pid);
 void proc_release_proc_lock(pid_t pid);
+
+void proc_timeout(pid_t pid);
 
 #endif /* proc_h */

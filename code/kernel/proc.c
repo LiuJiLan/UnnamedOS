@@ -45,6 +45,14 @@ struct {
 //      而能给进程表提供runnable的CPU却一直不幸的获取不了锁
 //  #3  情况2下, 如果有必须要解开单个进程的锁才能进行的操作
 //      如proc_clear_proc, 则进程表锁应该在所有操作执行完后再释放
+//  #4  后续开发中为了防止频繁的上锁, 设计了proc运行时确保私有的变量这一概念
+//      对这些变量处理时可以更灵活的处理锁的问题
+//      例1:时间片的处理中就没上锁
+//      例2:proc_find_runnable_to_run中,
+//      一旦找到的进程被确定更改为UNSCHEDULABLE就可以放锁了,
+//      因为这已经确保这个进程不会被其他CPU再次修改了
+//      例3:处理时间片到的proc_timeout中,
+//      时间片的重新赋值可以在上锁之前完成, 减少锁之内的运行时间
 
 
 //  考虑到后期兼容, 有三个特殊进程
@@ -415,5 +423,17 @@ void proc_acquire_proc_lock(pid_t pid) {
 }
 
 void proc_release_proc_lock(pid_t pid) {
+    release(&kproc.proctbl[pid].lock);
+}
+
+void proc_timeout(pid_t pid) {
+    kproc.proctbl[pid].remain_time = DEFAULT_TIME;
+    
+    acquire(&kproc.lock);
+    acquire(&kproc.proctbl[pid].lock);
+    release(&kproc.lock);
+    
+    kproc.proctbl[pid].sched = SCHEDULABLE;
+    
     release(&kproc.proctbl[pid].lock);
 }

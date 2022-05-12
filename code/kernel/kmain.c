@@ -45,7 +45,7 @@ void kmain(void) {
     pre_first_run_proc(&regs);
     
     sbi_set_timer(DEFAULT_SBI_TIMER);
-    s
+    
     proc_find_runnable_to_run(&regs, 0);
     
     panic("GOOD");
