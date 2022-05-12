@@ -76,16 +76,6 @@ struct {
 void proc_clear_proc(pid_t pid);
 int proc_load_bin(pid_t pid, char* kva_start, size_t len);
 
-//  每个CPU在第一次运行进程之前应该临时的给出一个regs的结构体
-//  注意, 应该确保这个trap_regs结构体的生命周期
-void pre_first_run_proc(struct trap_regs * regs) {
-    regs->tp = r_tp();
-    regs_t sstatus = r_sstatus();
-    sstatus |= 0x1U << 5;    //  SPIE, 开中断
-    sstatus &= ~(0x1U << 8);    //  SPP = USER
-    regs->sstatus = sstatus;
-}
-
 void procinit(void) {
     initlock(&kproc.lock, "kproc");
     
@@ -139,11 +129,9 @@ void procinit(void) {
     p = &kproc.proctbl[1];
     p->ppid = 0;
     p->upgtbl = vm_init_upgtbl();
-    int ret = proc_load_bin(1, initcode, *(uint64 *)initcode_len);
+    proc_load_bin(1, initcode, *(uint64 *)initcode_len);
     //  加载二进制形式的程序代码
-    if (ret == -1) {
-        panic("FUCK!");
-    }
+    //  注意本来是应该检查是否为-1的, 暂时默认一定会成功
     
     p->state = RUNNING;
     p->sched = SCHEDULABLE;
@@ -263,7 +251,6 @@ int proc_load_bin(pid_t pid, char* kva_start, size_t len) {
     for (uptr_t uva_pg = uva_pg_start; uva_pg < uva_pg_end; uva_pg += PGSIZE) {
         uptr_t kva = (uptr_t)kalloc();
         if (!kva) {
-            panic("1");
             return -1;
         }
         vm_kva_map_uva(upgtbl, kva, uva_pg);
@@ -272,14 +259,12 @@ int proc_load_bin(pid_t pid, char* kva_start, size_t len) {
     //  映射用户栈
     uptr_t kva = (uptr_t)kalloc();
     if (!kva) {
-        panic("2");
         return -1;
     }
     vm_kva_map_uva(upgtbl, kva, MAXUVA - PGSIZE);
     
     int ret = vm_memmove(upgtbl, (uptr_t)kva_start, 0x1000U, len, 0);
     if (ret == -1) {
-        panic("3");
         return ret;
     }
     
@@ -295,6 +280,27 @@ int proc_load_bin(pid_t pid, char* kva_start, size_t len) {
     proc->context.sp = proc->PROC_STACK_TOP;
     
     return 0;
+}
+
+
+
+
+//  --------------------------
+//  以下这些函数是给proc外部的文件使用的
+//  为的是不暴露kproc
+//  有些函数在proc中完全有方法解决
+//  这样的情况就不要再用以下函数包一层了
+
+
+
+//  每个CPU在第一次运行进程之前应该临时的给出一个regs的结构体
+//  注意, 应该确保这个trap_regs结构体的生命周期
+void pre_first_run_proc(struct trap_regs * regs) {
+    regs->tp = r_tp();
+    regs_t sstatus = r_sstatus();
+    sstatus |= 0x1U << 5;    //  SPIE, 开中断
+    sstatus &= ~(0x1U << 8);    //  SPP = USER
+    regs->sstatus = sstatus;
 }
 
 //  由于我们暂时采取的是不断的按顺序寻找
@@ -320,11 +326,8 @@ void proc_find_runnable_to_run(struct trap_regs * regs, pid_t pid) {
                 proc_context_copyout(regs, &(p + i)->context);
                 vm_2_proc_upgtbl((p + i)->upgtbl);
                 
-                char test[3];
-                test[0] = ':';
-                test[1] = '0' + i;
-                test[2] = '\0';
-                panic(test);
+                //  重制一下时间
+                sbi_set_timer(DEFAULT_SBI_TIMER);
                 
                 post_trap_handler(regs);
             } else {
@@ -347,6 +350,7 @@ void proc_find_runnable_to_run(struct trap_regs * regs, pid_t pid) {
                     my_hart()->myproc = (p + i);
                     proc_context_copyout(regs, &(p + i)->context);
                     vm_2_proc_upgtbl((p + i)->upgtbl);
+                    sbi_set_timer(DEFAULT_SBI_TIMER);
                     post_trap_handler(regs);
                 } else {
                     continue;
@@ -396,4 +400,20 @@ int proc_fork(pid_t ppid, pid_t cpid) {
     cproc->sched = SCHEDULABLE;
     
     return 0;
+}
+
+void proc_acquire_proctbl_lock(void) {
+    acquire(&kproc.lock);
+}
+
+void proc_release_proctbl_lock(void) {
+    release(&kproc.lock);
+}
+
+void proc_acquire_proc_lock(pid_t pid) {
+    acquire(&kproc.proctbl[pid].lock);
+}
+
+void proc_release_proc_lock(pid_t pid) {
+    release(&kproc.proctbl[pid].lock);
 }

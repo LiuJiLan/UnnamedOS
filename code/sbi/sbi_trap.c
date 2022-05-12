@@ -39,6 +39,8 @@ struct sbi_trap_regs * sbi_trap_handler(struct sbi_trap_regs * regs) {
     regs_t mcause = regs->mcause;
     int hart_id = (int)r_tp();
     
+    MEIP_FAULT("TRAP");
+    
     if (mcause & (0x1UL << 63)) {   //  中断
         mcause &= ~(1UL << 63);
         switch (mcause) {

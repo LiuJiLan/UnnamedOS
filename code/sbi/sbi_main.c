@@ -12,6 +12,8 @@
 //  来自sbi_trap_handler的符号
 extern void trap_vector(void);
 
+void panic(char * s);
+
 void sbimain(void) {
     //  设置mstatus
     //  设置权级转换到S, 并开全局中断
@@ -20,7 +22,7 @@ void sbimain(void) {
     mstatus = r_mstatus();
     mstatus &= ~(0x3 << 11);    //  清空MPP
     mstatus |= 0x1 << 11;       //  设置MPP为S-mode
-    mstatus |= 0x1 << 3;        //  设置MIE
+    mstatus |= 0x1 << 7;        //  设置MPIE
     w_mstatus(mstatus);
     
     //  设置mtvec

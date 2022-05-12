@@ -46,4 +46,16 @@ static inline void sfence_vma() {
   asm volatile("sfence.vma zero, zero");
 }
 
+static inline void sbi_set_timer(uint64 stime_value) {
+    //  忽略返回值
+    asm volatile("mv    a0, %0;"
+                 "li    a7, 0x054494D45;"
+                 "li    a6, 0x0;"
+                 "ecall"
+                 ://无输出
+                 :"r"(stime_value)//输入
+                 :"a6", "a7"//损坏
+                 );
+}
+
 #endif /* riscv_h */

@@ -20,6 +20,9 @@ for_gdb_physical = V2P_WO(for_gdb_virtual)
 .global entry
 entry:
     csrw    sie, zero
+    csrci   sie, 0x1 << 1   //  关SIE
+    li      t0, 0x0222
+    csrs    sie, t0
 
     //  由于内核空间是紧密排列的
     //  所以我们要将栈有个数的栈空间紧密的贴合在内核的.data中

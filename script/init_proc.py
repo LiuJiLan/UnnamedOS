@@ -11,6 +11,7 @@ except Exception as e:
     print("1. 请检查init.bin文件是否创建。")
     print("可在user目录下make init 创建。")
     print("2. 或检查当前目录: ", os.getcwd())
+    exit(-1)
     
 file_out = open(out_path, 'w')
 

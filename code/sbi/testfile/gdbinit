@@ -47,3 +47,6 @@ display/z $mip
 #x/34zg 0x80000550
 
 b set_CLINT_mtimecmp_infinitely
+b panic
+b MEIP_FAULT
+b M_MODE_Exception
