@@ -437,3 +437,41 @@ void proc_timeout(pid_t pid) {
     
     release(&kproc.proctbl[pid].lock);
 }
+
+//  要求不要对表和本进程上锁
+void proc_sleep_proc(pid_t pid) {
+    acquire(&kproc.lock);
+    acquire(&kproc.proctbl[pid].lock);
+    release(&kproc.lock);
+    
+    kproc.proctbl[pid].state = INTERRUPTIBLE;
+    
+    release(&kproc.proctbl[pid].lock);
+}
+
+//  要求不要对表和本进程上锁
+void proc_wakeup_proc(pid_t pid) {
+    acquire(&kproc.lock);
+    acquire(&kproc.proctbl[pid].lock);
+    release(&kproc.lock);
+    
+    if (kproc.proctbl[pid].state == INTERRUPTIBLE) {
+        //  不是第一次发生
+    }
+}
+//  注意wakeup很特殊,
+//  由于我们希望在满足一个等待中的进程的情况后,
+//  让这个进程"好像处于系统调用刚刚发生的状态"
+//  我们会在设备中断后重复运行一遍这个进程
+//  如果这次满足了其要求, 就会进入RUNNABLE的状态
+//  (此时CPU正被其他进程所拥有)
+//  但由于希望"好像处于系统调用刚刚发生的状态"
+//  会导致即使是第一次系统调用(此时本进程拥有本CPU)时
+//  也会遇到这个wakeup函数(相当于这个进程正在RUNNING)
+//  所以更改前要判断一下
+//  例:
+//  SYS_exit中:
+//  如果父进程 处于sleep 且 sleep的原因是SYS_wait4
+//  设置父进程从系统调用开始重新执行
+//  SYS_wait4中:
+//  没有合适条件会sleep自己

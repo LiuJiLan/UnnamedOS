@@ -92,12 +92,9 @@ void STIP_handler(struct trap_regs * regs) {
 
 void U_ECALL_handler(struct trap_regs * regs) {
     struct proc * myproc = my_hart()->myproc;
-    pid_t my_pid = myproc->pid;
     
     //  保存当前进程的context
     proc_context_copyin(regs, &myproc->context);
-    
-    //  为了之后函数的通用性我们必须在这里保存
-    //  因为不想频繁上锁改进了不少东西
+    pid_t my_pid = myproc->pid;
     
 }
