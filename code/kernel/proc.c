@@ -321,13 +321,13 @@ void proc_find_runnable_to_run(struct trap_regs * regs, pid_t pid) {
     for (int i = (pid + 1) % NPROC; i < NPROC; i++) {
         if ((p + i)->sched == SCHEDULABLE) {
             acquire(&kproc.lock);
-            acquire(&kproc.proctbl[i].lock);
+            acquire(&(p + i)->lock);
             release(&kproc.lock);
             if ((p + i)->sched == SCHEDULABLE) {
                 //  带锁后重新确认
                 
                 (p + i)->sched = UNSCHEDULABLE;
-                release(&kproc.proctbl[i].lock);
+                release(&(p + i)->lock);
                 //  对单进程做完写操作就可以放锁了
                 
                 my_hart()->myproc = (p + i);
@@ -350,11 +350,11 @@ void proc_find_runnable_to_run(struct trap_regs * regs, pid_t pid) {
         for (int i = 0; i < NPROC; i++) {
             if ((p + i)->sched == SCHEDULABLE) {
                 acquire(&kproc.lock);
-                acquire(&kproc.proctbl[i].lock);
+                acquire(&(p + i)->lock);
                 release(&kproc.lock);
                 if ((p + i)->sched == SCHEDULABLE) {
                     (p + i)->sched = UNSCHEDULABLE;
-                    release(&kproc.proctbl[i].lock);
+                    release(&(p + i)->lock);
                     my_hart()->myproc = (p + i);
                     proc_context_copyout(regs, &(p + i)->context);
                     vm_2_proc_upgtbl((p + i)->upgtbl);
@@ -376,8 +376,9 @@ int proc_fork(pid_t ppid, pid_t cpid) {
     struct proc * pproc = &kproc.proctbl[ppid];
     struct proc * cproc = &kproc.proctbl[cpid];
     
-    cproc->usable = UNUSABLE;
+    //  cproc->usable = UNUSABLE;
     //  早些更改状态, 其他CPU读到后尝试上锁(只是节约时间)
+    //  在寻找的时候已经改变
     
     //  设置好父子进程关系
     cproc->ppid = ppid;
@@ -455,23 +456,143 @@ void proc_wakeup_proc(pid_t pid) {
     acquire(&kproc.proctbl[pid].lock);
     release(&kproc.lock);
     
-    if (kproc.proctbl[pid].state == INTERRUPTIBLE) {
-        //  不是第一次发生
+    kproc.proctbl[pid].state = RUNNING;
+    kproc.proctbl[pid].sched = SCHEDULABLE;
+    
+    release(&kproc.proctbl[pid].lock);
+}
+//  不再考虑重复运行系统调用,
+//  如果一个系统调用没有被满足, 它会回到ecall的状态
+//  所以只要ecall不被清除(pc += 4)
+//  就会反复去调用
+
+//  这样的坏处是很有可能一个应用很有可能一直得不到资源
+//  现在想到的方法是在调度方法中来解决
+//  但可以大大提高通用性
+
+//  要求必须给进程表上锁, 且调用这个函数之前的函数自身不应该上锁单个进程
+//  (单个进程可能会被其他CPU占有, 但这中情况是没有问题的)
+//  如果找到会标UNUSABLE
+//  返回0表示没有合适的进程
+pid_t proc_find_usable_to_use(void) {
+    struct proc * p = &kproc.proctbl[0];
+    for (int i = 1; i < NPROC; i++) {
+        if ( (p + i)->usable == USABLE ) {
+            acquire(&(p + i)->lock);    //  上锁再次检查
+            if ( (p + i)->usable == USABLE ) {
+                (p + i)->usable = UNUSABLE;
+                release(&(p + i)->lock);
+                return i;
+            }
+            release(&(p + i)->lock);
+            continue;
+        }
     }
 }
-//  注意wakeup很特殊,
-//  由于我们希望在满足一个等待中的进程的情况后,
-//  让这个进程"好像处于系统调用刚刚发生的状态"
-//  我们会在设备中断后重复运行一遍这个进程
-//  如果这次满足了其要求, 就会进入RUNNABLE的状态
-//  (此时CPU正被其他进程所拥有)
-//  但由于希望"好像处于系统调用刚刚发生的状态"
-//  会导致即使是第一次系统调用(此时本进程拥有本CPU)时
-//  也会遇到这个wakeup函数(相当于这个进程正在RUNNING)
-//  所以更改前要判断一下
-//  例:
-//  SYS_exit中:
-//  如果父进程 处于sleep 且 sleep的原因是SYS_wait4
-//  设置父进程从系统调用开始重新执行
-//  SYS_wait4中:
-//  没有合适条件会sleep自己
+
+ 
+void sys_clone(struct trap_regs * regs, pid_t pid) {
+    acquire(&kproc.lock);
+    
+    struct proc * pproc = &kproc.proctbl[pid];
+    //  这里的parent proc指的是自己
+    
+    pid_t cpid = proc_find_usable_to_use();
+    
+    if (cpid == 0) {
+        release(&kproc.lock);
+        pproc->context.a0 = -1;
+        pproc->context.sepc += 4;
+        proc_context_copyout(regs, &pproc->context);
+        return;
+    }
+    
+    struct proc * cproc = &kproc.proctbl[cpid];
+    acquire(&pproc->lock);
+    acquire(&cproc->lock);
+    
+    int ret = proc_fork(pid, cpid);
+    
+    if (ret == -1) {
+        release(&pproc->lock);
+        release(&cproc->lock);
+        proc_clear_proc(cpid);
+        
+        release(&kproc.lock);
+        pproc->context.a0 = -1;
+        pproc->context.sepc += 4;
+        proc_context_copyout(regs, &pproc->context);
+        return;
+    }
+    
+    release(&kproc.lock);
+    pproc->context.a0 = cpid;
+    pproc->context.sepc += 4;
+    cproc->context.a0 = 0;
+    cproc->context.sepc += 4;
+    proc_context_copyout(regs, &pproc->context);
+}
+
+pid_t proc_waiting_set_satisfied(uint64 zombie_bitmap, uint64 waiting_set) {
+    
+}
+
+#define WNOHANG         0x00000001  //  0b001
+#define WUNTRACED       0x00000002  //  0b010
+
+void sys_wait4(struct trap_regs * regs, pid_t pid) {
+    struct proc * pproc = &kproc.proctbl[pid];
+    //  这里的parent proc指的是自己
+    
+    if (pproc->cpid_bitmap == 0) {
+        pproc->context.a0 = -1;
+        pproc->context.sepc += 4;
+        proc_context_copyout(regs, &pproc->context);
+        return;
+    }
+    //  注意这个判断连表都无需上锁
+    //  一个进程子进程的出现,
+    //  要么是自己fork出来的, 要么是自己fork出来的子进程托管的孤儿进程
+    //  如果是前者, 那我现在在wait4, 自然不会fork操作
+    //  如果是后者, 无论其他CPU有没有写回, 子进程列表一定不为空
+    //  由此可知道, 这个判断不需要上任何锁
+    
+    acquire(&kproc.lock);
+    acquire(&pproc->lock);
+    //  一旦这两个锁上成功了, 就说明不会再有子进程ZOMBIE表的更改
+    
+    pid_t cpid = proc_find_usable_to_use();
+    
+    if (cpid == 0) {
+        release(&kproc.lock);
+        pproc->context.a0 = -1;
+        pproc->context.sepc += 4;
+        proc_context_copyout(regs, &pproc->context);
+        return;
+    }
+    
+    struct proc * cproc = &kproc.proctbl[cpid];
+    acquire(&pproc->lock);
+    acquire(&cproc->lock);
+    
+    int ret = proc_fork(pid, cpid);
+    
+    if (ret == -1) {
+        release(&pproc->lock);
+        release(&cproc->lock);
+        proc_clear_proc(cpid);
+        
+        release(&kproc.lock);
+        pproc->context.a0 = -1;
+        pproc->context.sepc += 4;
+        proc_context_copyout(regs, &pproc->context);
+        return;
+    }
+    
+    release(&kproc.lock);
+    pproc->context.a0 = cpid;
+    pproc->context.sepc += 4;
+    cproc->context.a0 = 0;
+    cproc->context.sepc += 4;
+    proc_context_copyout(regs, &pproc->context);
+}

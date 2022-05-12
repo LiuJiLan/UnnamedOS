@@ -13,6 +13,7 @@ KERNEL_C = \
 	kalloc.c \
 	vm.c \
 	proc.c \
+	syscall.c \
 	string.c \
 	
 KERNEL_PY = \

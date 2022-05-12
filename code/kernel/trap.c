@@ -10,6 +10,7 @@
 #include "proc.h"
 #include "hart.h"
 #include "types.h"
+#include "syscall.h"
 
 extern void panic(char *s);
 
@@ -95,6 +96,5 @@ void U_ECALL_handler(struct trap_regs * regs) {
     
     //  保存当前进程的context
     proc_context_copyin(regs, &myproc->context);
-    pid_t my_pid = myproc->pid;
     
 }

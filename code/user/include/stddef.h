@@ -127,4 +127,8 @@ struct linux_dirent64 {
 #define MAP_PRIVATE 0X02
 #define MAP_FAILED ((void *) -1)
 
+//  for wait
+#define WNOHANG         0x00000001  //  0b001
+#define WUNTRACED       0x00000002  //  0b010
+
 #endif // __STDDEF_H__
