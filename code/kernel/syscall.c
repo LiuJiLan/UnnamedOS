@@ -9,7 +9,6 @@
 #include "hart.h"
 #include "proc.h"
 #include "types.h"
-#include "trap.h"
 
 extern void panic(char * s);
 

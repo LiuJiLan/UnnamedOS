@@ -479,7 +479,9 @@ if 没有等待集合满足要求:
 	
 if 满足要求:
 	# 无论是否是多个满足要求, 只返回满足集合中的第一个(pid最小)
-	*wstatus = c_proc.xstate
+	
+	if (wstatus != NULL):
+		*wstatus = c_proc.xstate
 	cpid = c_proc.pid
 	if	WUNTRACED:
 		return cpid

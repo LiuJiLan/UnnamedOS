@@ -12,6 +12,7 @@
 #include "kalloc.h"
 #include "hart.h"
 #include "riscv.h"
+#include "syscall.h"
 
 extern void panic(char *s);
 
@@ -208,39 +209,42 @@ void proc_context_copyin(struct trap_regs * regs, struct context * proc_context)
 }
 
 //  将 进程的上下文 复制到 trap的上下文
+//  regs给NULL时不操作
 void proc_context_copyout(struct trap_regs * regs, struct context * proc_context) {
-    regs->ra = proc_context->ra;
-    regs->sp = proc_context->sp;
-    regs->gp = proc_context->gp;
-    //regs->tp = proc_context->tp;
-    regs->t0 = proc_context->t0;
-    regs->t1 = proc_context->t1;
-    regs->t2 = proc_context->t2;
-    regs->s0 = proc_context->s0;
-    regs->s1 = proc_context->s1;
-    regs->a0 = proc_context->a0;
-    regs->a1 = proc_context->a1;
-    regs->a2 = proc_context->a2;
-    regs->a3 = proc_context->a3;
-    regs->a4 = proc_context->a4;
-    regs->a5 = proc_context->a5;
-    regs->a6 = proc_context->a6;
-    regs->a7 = proc_context->a7;
-    regs->s2 = proc_context->s2;
-    regs->s3 = proc_context->s3;
-    regs->s4 = proc_context->s4;
-    regs->s5 = proc_context->s5;
-    regs->s6 = proc_context->s6;
-    regs->s7 = proc_context->s7;
-    regs->s8 = proc_context->s8;
-    regs->s9 = proc_context->s9;
-    regs->s10 = proc_context->s10;
-    regs->s11 = proc_context->s11;
-    regs->t3 = proc_context->t3;
-    regs->t4 = proc_context->t4;
-    regs->t5 = proc_context->t5;
-    regs->t6 = proc_context->t6;
-    regs->sepc = proc_context->sepc;
+    if (regs) { //  NULL是假系统调用
+        regs->ra = proc_context->ra;
+        regs->sp = proc_context->sp;
+        regs->gp = proc_context->gp;
+        //regs->tp = proc_context->tp;
+        regs->t0 = proc_context->t0;
+        regs->t1 = proc_context->t1;
+        regs->t2 = proc_context->t2;
+        regs->s0 = proc_context->s0;
+        regs->s1 = proc_context->s1;
+        regs->a0 = proc_context->a0;
+        regs->a1 = proc_context->a1;
+        regs->a2 = proc_context->a2;
+        regs->a3 = proc_context->a3;
+        regs->a4 = proc_context->a4;
+        regs->a5 = proc_context->a5;
+        regs->a6 = proc_context->a6;
+        regs->a7 = proc_context->a7;
+        regs->s2 = proc_context->s2;
+        regs->s3 = proc_context->s3;
+        regs->s4 = proc_context->s4;
+        regs->s5 = proc_context->s5;
+        regs->s6 = proc_context->s6;
+        regs->s7 = proc_context->s7;
+        regs->s8 = proc_context->s8;
+        regs->s9 = proc_context->s9;
+        regs->s10 = proc_context->s10;
+        regs->s11 = proc_context->s11;
+        regs->t3 = proc_context->t3;
+        regs->t4 = proc_context->t4;
+        regs->t5 = proc_context->t5;
+        regs->t6 = proc_context->t6;
+        regs->sepc = proc_context->sepc;
+    }
 }
 
 
@@ -456,19 +460,22 @@ void proc_wakeup_proc(pid_t pid) {
     acquire(&kproc.proctbl[pid].lock);
     release(&kproc.lock);
     
-    kproc.proctbl[pid].state = RUNNING;
-    kproc.proctbl[pid].sched = SCHEDULABLE;
+    if (my_hart()->myproc->pid != pid) {
+        kproc.proctbl[pid].state = RUNNING;
+        kproc.proctbl[pid].sched = SCHEDULABLE;
+    }
     
     release(&kproc.proctbl[pid].lock);
 }
-//  不再考虑重复运行系统调用,
-//  如果一个系统调用没有被满足, 它会回到ecall的状态
-//  所以只要ecall不被清除(pc += 4)
-//  就会反复去调用
+//  不能放弃这个思路, 虽然之后一定能找到更好的解决方法
 
-//  这样的坏处是很有可能一个应用很有可能一直得不到资源
-//  现在想到的方法是在调度方法中来解决
-//  但可以大大提高通用性
+//  系统调用的时候可以反复使用
+void proc_handle_syscall(struct trap_regs * regs, pid_t pid) {
+    //  如果是中断后重新运行的系统调用
+    //  regs给NULL
+    //  注意, 假系统调用只能用于外设的处理上
+    //  比如exit去通知wait4的进程, wait4系统调用中就不需要wakeup自己
+}
 
 //  要求必须给进程表上锁, 且调用这个函数之前的函数自身不应该上锁单个进程
 //  (单个进程可能会被其他CPU占有, 但这中情况是没有问题的)
@@ -533,8 +540,17 @@ void sys_clone(struct trap_regs * regs, pid_t pid) {
     proc_context_copyout(regs, &pproc->context);
 }
 
+//  有满足的返回pid, 没有则返回0
 pid_t proc_waiting_set_satisfied(uint64 zombie_bitmap, uint64 waiting_set) {
-    
+    if (waiting_set != -1) {
+        zombie_bitmap |= 0x1U << waiting_set;
+    }
+    for (int i = 1; i < NPROC; i++) {
+        if (zombie_bitmap | 0x1U << i) {
+            return i;
+        }
+    }
+    return 0;
 }
 
 #define WNOHANG         0x00000001  //  0b001
@@ -561,38 +577,60 @@ void sys_wait4(struct trap_regs * regs, pid_t pid) {
     acquire(&pproc->lock);
     //  一旦这两个锁上成功了, 就说明不会再有子进程ZOMBIE表的更改
     
-    pid_t cpid = proc_find_usable_to_use();
+    
+    pid_t cpid = proc_waiting_set_satisfied(pproc->zombie_bitmap, pproc->context.a0);
     
     if (cpid == 0) {
+        if (pproc->context.a2 | WNOHANG) {
+            release(&kproc.lock);
+            release(&pproc->lock);
+            pproc->context.a0 = 0;
+            pproc->context.sepc += 4;
+            proc_context_copyout(regs, &pproc->context);
+            return;
+        }
+        
         release(&kproc.lock);
-        pproc->context.a0 = -1;
-        pproc->context.sepc += 4;
-        proc_context_copyout(regs, &pproc->context);
-        return;
+        pproc->state = INTERRUPTIBLE;
+        release(&pproc->lock);
+        
+        vm_2_kpgtbl();
+        pid_t my_pid = pproc->pid;
+        my_hart()->myproc = NULL;
+        
+        proc_find_runnable_to_run(regs, my_pid);
     }
     
     struct proc * cproc = &kproc.proctbl[cpid];
-    acquire(&pproc->lock);
     acquire(&cproc->lock);
     
-    int ret = proc_fork(pid, cpid);
     
-    if (ret == -1) {
-        release(&pproc->lock);
-        release(&cproc->lock);
-        proc_clear_proc(cpid);
-        
-        release(&kproc.lock);
-        pproc->context.a0 = -1;
-        pproc->context.sepc += 4;
-        proc_context_copyout(regs, &pproc->context);
-        return;
+    uptr_t uva = pproc->context.a1;
+    if (uva) {  //  wstatus != NULL
+        //  不要自己写函数, 因为uva可能跨越页
+        //  BUG!!!!!!!!!!
+        //  忽略了vm_memmove的返回!!!
+        uptr_t cast_xstate = cproc->xstate;
+        vm_memmove(pproc->upgtbl, (uptr_t)&cast_xstate, uva, sizeof(uptr_t), 0);
     }
     
-    release(&kproc.lock);
+    if (pproc->context.a2 | WUNTRACED) {
+        //  只返回不清理
+        release(&cproc->lock);
+    } else {
+        release(&cproc->lock);
+        proc_clear_proc(cpid);
+        uint64 clear_child_bitmap = ~(0x1U << cpid);
+        pproc->cpid_bitmap &= clear_child_bitmap;
+        pproc->zombie_bitmap &= clear_child_bitmap;
+    }
+    
+    
+    release(&kproc.lock);   //  放进程表锁
+    release(&pproc->lock);
+    
     pproc->context.a0 = cpid;
     pproc->context.sepc += 4;
-    cproc->context.a0 = 0;
-    cproc->context.sepc += 4;
     proc_context_copyout(regs, &pproc->context);
+    return;
 }

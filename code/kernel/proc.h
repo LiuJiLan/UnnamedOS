@@ -128,4 +128,6 @@ void proc_timeout(pid_t pid);
 void proc_sleep_proc(pid_t pid);
 void proc_wakeup_proc(pid_t pid);
 
+void proc_handle_syscall(struct trap_regs * regs, pid_t pid);
+
 #endif /* proc_h */

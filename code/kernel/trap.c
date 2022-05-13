@@ -93,8 +93,9 @@ void STIP_handler(struct trap_regs * regs) {
 
 void U_ECALL_handler(struct trap_regs * regs) {
     struct proc * myproc = my_hart()->myproc;
-    
+    pid_t mypid = myproc->pid;
     //  保存当前进程的context
     proc_context_copyin(regs, &myproc->context);
     
+    proc_handle_syscall(regs, mypid);
 }

@@ -8,6 +8,8 @@
 #ifndef syscall_h
 #define syscall_h
 
+#include "trap.h"
 
+void syscall_handler(struct trap_regs * regs);
 
 #endif /* syscall_h */
