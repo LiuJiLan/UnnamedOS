@@ -70,4 +70,4 @@ clean:
 
 initcode.S:
 	# initcode.S必须确保是最新的
-	python3 ../../script/init_proc.py
+	@python3 ../../script/init_proc.py

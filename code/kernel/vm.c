@@ -11,6 +11,8 @@
 #include "string.h"
 #include "riscv.h"
 
+extern void panic(char *);
+
 #define PA2PTE(pa) ((((uint64)pa) >> 12) << 10) //  后10位perm
 #define PTE2PA(pte) (((pte) >> 10) << 12)
 
@@ -76,7 +78,11 @@ void * vm_inverse_of_map(pgtbl_t pgtbl, uptr_t va) {
     }
     
     pte = &pgtbl[PX(0, va)];
-    return (void *)(PTE2PA(*pte));
+    if (*pte & PTE_V) {
+        return (void *)(PTE2PA(*pte));
+    } else {
+        return NULL;
+    }
 }
 
 //  返回0成功, 返回-1表示本身未映射
@@ -250,7 +256,11 @@ void * vm_uva_inverse_kva(pgtbl_t upgtbl, uptr_t uva) {
     }
     
     pte = &upgtbl[PX(0, uva)];
-    return (void *)P2V((PTE2PA(*pte)));
+    if (*pte & PTE_V) {
+        return (void *)P2V(PTE2PA(*pte));
+    } else {
+        return NULL;
+    }
 }
 
 //  虚拟地址条件下的内存复制
@@ -302,6 +312,9 @@ int vm_memmove(pgtbl_t upgtbl, uptr_t kva, uptr_t uva, size_t n, int dir) {
 int vm_deep_copy(pgtbl_t u_dst, pgtbl_t u_src) {
     uptr_t uva_pg_start = 0x0U;
     uptr_t uva_pg_end = MAXUVA;
+    
+    //  不能这样做
+    //  qemu下for循环10000000次大概要7s
     
     for (uptr_t uva_pg = uva_pg_start; uva_pg < uva_pg_end; uva_pg += PGSIZE) {
         void * mapped = vm_uva_inverse_kva(u_src, uva_pg);

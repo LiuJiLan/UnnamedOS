@@ -166,6 +166,12 @@ void proc_clear_proc(pid_t pid) {
     initlock(&p->lock, "proc");
 }
 
+void proc_delete_proc(pid_t pid) {
+    struct proc * p = &kproc.proctbl[pid];
+    vm_delete_upgtbl(p->upgtbl);
+    proc_clear_proc(pid);
+}
+
 //  将 trap的上下文 复制到 进程的上下文
 //  regs为NULL时只需要给context清0
 void proc_context_copyin(struct trap_regs * regs, struct context * proc_context) {
@@ -444,17 +450,32 @@ void proc_timeout(pid_t pid) {
 }
 
 //  要求不要对表和本进程上锁
-void proc_sleep_proc(pid_t pid) {
+//  如果要求睡眠的是自己CPU拥有的进程
+//  则休眠并找到一个新的进程
+//  如果不是, 则说明这个sleep是由于中断处理提起,
+//  但是任然没有满足的情况则什么都不做
+void proc_sleep_proc(struct trap_regs * regs, pid_t pid) {
     acquire(&kproc.lock);
     acquire(&kproc.proctbl[pid].lock);
     release(&kproc.lock);
     
-    kproc.proctbl[pid].state = INTERRUPTIBLE;
+    if (my_hart()->myproc->pid != pid) {
+        kproc.proctbl[pid].state = INTERRUPTIBLE;
+        release(&kproc.proctbl[pid].lock);
+        
+        vm_2_kpgtbl();
+        my_hart()->myproc = NULL;
+        
+        proc_find_runnable_to_run(regs, pid);
+    }
     
     release(&kproc.proctbl[pid].lock);
 }
 
 //  要求不要对表和本进程上锁
+//  如果wakeup的进程不是自己CPU的进程
+//  (由中断处理唤起的)变为RUNNABLE
+//  否则不改变
 void proc_wakeup_proc(pid_t pid) {
     acquire(&kproc.lock);
     acquire(&kproc.proctbl[pid].lock);
@@ -475,6 +496,12 @@ void proc_handle_syscall(struct trap_regs * regs, pid_t pid) {
     //  regs给NULL
     //  注意, 假系统调用只能用于外设的处理上
     //  比如exit去通知wait4的进程, wait4系统调用中就不需要wakeup自己
+    
+    //  注意, 一定是从进程的context中取值;
+    struct proc * p = &kproc.proctbl[pid];
+    syscall_handler(regs, p);
+    
+    proc_context_copyout(regs, &p->context);
 }
 
 //  要求必须给进程表上锁, 且调用这个函数之前的函数自身不应该上锁单个进程
@@ -498,7 +525,7 @@ pid_t proc_find_usable_to_use(void) {
 }
 
  
-void sys_clone(struct trap_regs * regs, pid_t pid) {
+void sys_clone(pid_t pid) {
     acquire(&kproc.lock);
     
     struct proc * pproc = &kproc.proctbl[pid];
@@ -510,7 +537,6 @@ void sys_clone(struct trap_regs * regs, pid_t pid) {
         release(&kproc.lock);
         pproc->context.a0 = -1;
         pproc->context.sepc += 4;
-        proc_context_copyout(regs, &pproc->context);
         return;
     }
     
@@ -523,12 +549,11 @@ void sys_clone(struct trap_regs * regs, pid_t pid) {
     if (ret == -1) {
         release(&pproc->lock);
         release(&cproc->lock);
-        proc_clear_proc(cpid);
+        proc_delete_proc(cpid);
         
         release(&kproc.lock);
         pproc->context.a0 = -1;
         pproc->context.sepc += 4;
-        proc_context_copyout(regs, &pproc->context);
         return;
     }
     
@@ -537,7 +562,6 @@ void sys_clone(struct trap_regs * regs, pid_t pid) {
     pproc->context.sepc += 4;
     cproc->context.a0 = 0;
     cproc->context.sepc += 4;
-    proc_context_copyout(regs, &pproc->context);
 }
 
 //  有满足的返回pid, 没有则返回0
@@ -563,7 +587,6 @@ void sys_wait4(struct trap_regs * regs, pid_t pid) {
     if (pproc->cpid_bitmap == 0) {
         pproc->context.a0 = -1;
         pproc->context.sepc += 4;
-        proc_context_copyout(regs, &pproc->context);
         return;
     }
     //  注意这个判断连表都无需上锁
@@ -586,7 +609,6 @@ void sys_wait4(struct trap_regs * regs, pid_t pid) {
             release(&pproc->lock);
             pproc->context.a0 = 0;
             pproc->context.sepc += 4;
-            proc_context_copyout(regs, &pproc->context);
             return;
         }
         
@@ -595,10 +617,10 @@ void sys_wait4(struct trap_regs * regs, pid_t pid) {
         release(&pproc->lock);
         
         vm_2_kpgtbl();
-        pid_t my_pid = pproc->pid;
         my_hart()->myproc = NULL;
         
-        proc_find_runnable_to_run(regs, my_pid);
+        proc_find_runnable_to_run(regs, pid);
+        //  特殊方式的转跳
     }
     
     struct proc * cproc = &kproc.proctbl[cpid];
@@ -619,7 +641,7 @@ void sys_wait4(struct trap_regs * regs, pid_t pid) {
         release(&cproc->lock);
     } else {
         release(&cproc->lock);
-        proc_clear_proc(cpid);
+        proc_delete_proc(cpid);
         uint64 clear_child_bitmap = ~(0x1U << cpid);
         pproc->cpid_bitmap &= clear_child_bitmap;
         pproc->zombie_bitmap &= clear_child_bitmap;
@@ -631,6 +653,61 @@ void sys_wait4(struct trap_regs * regs, pid_t pid) {
     
     pproc->context.a0 = cpid;
     pproc->context.sepc += 4;
-    proc_context_copyout(regs, &pproc->context);
+    return;
+}
+
+void sys_exit(struct trap_regs * regs, pid_t pid) {
+    acquire(&kproc.lock);
+    struct proc * p = &kproc.proctbl[0];
+    
+    struct proc * proc = &kproc.proctbl[pid];
+    acquire(&proc->lock);   //  先上自己的锁
+    
+    pid_t ppid = proc->ppid;
+    struct proc * pproc = &kproc.proctbl[ppid];
+    acquire(&pproc->lock);   //  再上自己父进程的锁
+    
+    uint64 cpid_bitmap = proc->cpid_bitmap;
+    for (int i = 0; i < NPROC; i++) {
+        if (cpid_bitmap | 0x1U << i) {  //  是自己的子进程
+            acquire( &(p + i)->lock );
+            (p + i)->ppid = ppid;
+            release( &(p + i)->lock );
+        }
+    }
+    
+    release(&kproc.lock);   //  放进程表
+    
+    proc->state = (int)proc->context.a0;
+    pproc->cpid_bitmap |= proc->cpid_bitmap;
+    pproc->zombie_bitmap |= proc->zombie_bitmap;
+    
+    proc->state = ZOMBIE;
+    release(&proc->lock);   //  放自己的锁
+    
+    if (pproc->state == INTERRUPTIBLE && pproc->context.a7 == SYS_wait4) {
+        pproc->state = RUNNING;
+        pproc->sched = SCHEDULABLE;
+    }
+    //  否则什么都不用多做, 因为最终的父进程init一定会运行到wait去回收的
+    
+    release(&pproc->lock);
+    
+    vm_2_kpgtbl();
+    my_hart()->myproc = NULL;
+    
+    proc_find_runnable_to_run(regs, pid);
+}
+
+void sys_getppid(pid_t pid) {
+    acquire(&kproc.lock);
+    
+    struct proc * proc = &kproc.proctbl[pid];
+    acquire(&kproc.lock);
+    
+    proc->context.a0 = proc->ppid;
+    proc->context.sepc += 4;
+    release(&proc->lock);
+    
     return;
 }

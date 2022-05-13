@@ -32,6 +32,9 @@ char * kalloc(void) {
     r = kmem.freelist;
     if (r) {    //  如果不是NULL就分出一个node出来
         kmem.freelist = r->next;
+        //  BUG!!!
+        //  代码中有重复清0的地方
+        memset(r, 0x0, PGSIZE);
     }
     
     release(&kmem.lock);

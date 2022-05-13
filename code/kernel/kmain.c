@@ -24,34 +24,42 @@ void kinit1(void);
 void kinit2(void);
 void kvm_alloc_and_load(void);
 
+volatile static int started = 0;
+
 void kmain(void) {
-    init_hart();
+    regs_t hartid = r_tp();
     
-    //  物理内存的初始化和虚拟内存的使用会引发问题
-    //  想要使用完整的内核页表必须要有管理物理页面的能力
-    //  想要管理所有物理内存有需要有完整的页表
-    //  所以只能分布的完成, 例如先回收一部分物理页
-    
-    kinit1();
-    kvm_alloc_and_load();
-    vm_2_kpgtbl();
-    kinit2();
-    
-    panic("GOOD");
-    
-    procinit();
+    if (hartid == 0) {
+        init_hart();
+        
+        //  物理内存的初始化和虚拟内存的使用会引发问题
+        //  想要使用完整的内核页表必须要有管理物理页面的能力
+        //  想要管理所有物理内存有需要有完整的页表
+        //  所以只能分布的完成, 例如先回收一部分物理页
+        
+        kinit1();
+        kvm_alloc_and_load();
+        vm_2_kpgtbl();
+        kinit2();
+        procinit();
+        panic("HART 0 IS OK");
+        
+        __sync_synchronize();
+        started = 1;
+        
+        
+    } else {
+        while (started == 0);
+        __sync_synchronize();
+        
+        vm_2_kpgtbl();
+        panic("OTHER HART 0 IS OK");
+    }
     
     struct trap_regs regs;
     pre_first_run_proc(&regs);
-    
     sbi_set_timer(DEFAULT_SBI_TIMER);
-    
     proc_find_runnable_to_run(&regs, 0);
-    
-    panic("GOOD");
-    
-    while (1) {
-    }   
 }
 
 void kinit1(void) {

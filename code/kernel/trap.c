@@ -44,8 +44,8 @@ struct trap_regs * trap_handler(struct trap_regs * regs) {
     
     switch (scause) {
         case Environment_Call_From_U_mode:
+            U_ECALL_handler(regs);
             
-            regs->sepc += 4;
             break;
             
         default:

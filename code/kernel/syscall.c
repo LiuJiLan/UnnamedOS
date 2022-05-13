@@ -7,35 +7,50 @@
 
 #include "syscall.h"
 #include "hart.h"
-#include "proc.h"
-#include "types.h"
 
 extern void panic(char * s);
 
-#define SYS_clone 220
-#define SYS_wait4 260
-#define SYS_exit 93
-#define SYS_getppid 173
-#define SYS_getpid 172
+extern void sys_clone(pid_t pid);
+extern void sys_wait4(struct trap_regs * regs, pid_t pid);
+extern void sys_exit(struct trap_regs * regs, pid_t pid);
+extern void sys_getppid(pid_t pid);
+//extern void sys_getpid(void);
 
-extern void sys_clone(struct trap_regs * regs, pid_t pid);
-extern void sys_wait4(void);
-extern void sys_exit(void);
-extern void sys_getppid(void);
-extern void sys_getpid(void);
-
-void syscall_handler(struct trap_regs * regs) {
-    regs_t sys_num = my_hart()->myproc->context.a7;
-    pid_t mypid = my_hart()->myproc->pid;
+void syscall_handler(struct trap_regs * regs, struct proc * proc) {
+    regs_t sys_num = proc->context.a7;
+    pid_t mypid = proc->pid;
+    
+    char str[10] = "mypid:0;";  //  FOR DEBUG
     
     switch (sys_num) {
         case SYS_clone:
-            sys_clone(regs, mypid);
+            sys_clone(mypid);
+            break;
+        
+        case SYS_wait4:
+            sys_wait4(regs, mypid);
+            break;
+            
+        case SYS_exit:
+            panic("EXIT");
+            sys_wait4(regs, mypid);
+            break;
+            
+        case SYS_getppid:
+            sys_getppid(mypid);
+            break;
+            
+        case SYS_getpid:
+            str[6] += mypid;
+            panic(str);
+            proc->context.a0 = mypid;
+            proc->context.sepc += 4;
             break;
             
         default:
             panic("UNKNOWN SYSCALL!");
-            regs->sepc += 4;
+            proc->context.a0 = -1;
+            proc->context.sepc += 4;
             break;
     }
 }

@@ -4,7 +4,7 @@ target remote : 1234
 set print pretty on
 
 #b*0x80000000
-b*0x80200000
+#b*0x80200000
 
 #有页表才能设后面的断点
 b for_gdb_physical
