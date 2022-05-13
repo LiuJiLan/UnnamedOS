@@ -30,6 +30,7 @@ void syscall_handler(struct trap_regs * regs, struct proc * proc) {
             break;
         
         case SYS_wait4:
+            panic("SYS_WAIT4");
             sys_wait4(regs, mypid);
             break;
             

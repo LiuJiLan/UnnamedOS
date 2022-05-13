@@ -570,6 +570,8 @@ void sys_clone(pid_t pid) {
     pproc->context.sepc += 4;
     cproc->context.a0 = 0;
     cproc->context.sepc += 4;
+    release(&pproc->lock);
+    release(&cproc->lock);
 }
 
 //  有满足的返回pid, 没有则返回0
