@@ -309,14 +309,13 @@ int vm_memmove(pgtbl_t upgtbl, uptr_t kva, uptr_t uva, size_t n, int dir) {
 //  只能用于两个用户态页表
 //  ret 0成功, ret -1失败
 //  u_dst的用户态部分必须是被清空的
-int vm_deep_copy(pgtbl_t u_dst, pgtbl_t u_src) {
-    uptr_t uva_pg_start = 0x0U;
-    uptr_t uva_pg_end = MAXUVA;
-    
-    //  不能这样做
+int vm_deep_copy(pgtbl_t u_dst, pgtbl_t u_src, uptr_t uva_pg_start, int PG_SZ) {
+    //  不能一口气复制整个用户可能的空间
     //  qemu下for循环10000000次大概要7s
     
-    for (uptr_t uva_pg = uva_pg_start; uva_pg < uva_pg_end; uva_pg += PGSIZE) {
+    int i = 0;
+    uptr_t uva_pg = uva_pg_start;
+    while (i < PG_SZ) {
         void * mapped = vm_uva_inverse_kva(u_src, uva_pg);
         if (mapped) {   //  mapped != NULL说明被映射过了
             void * new_kva = kalloc();
@@ -328,6 +327,9 @@ int vm_deep_copy(pgtbl_t u_dst, pgtbl_t u_src) {
             }
             memmove(new_kva, mapped, PGSIZE);
         }
+        
+        i++;
+        uva_pg += PGSIZE;
     }
     
     return 0;

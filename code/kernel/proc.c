@@ -293,6 +293,8 @@ int proc_load_bin(pid_t pid, char* kva_start, size_t len) {
     proc->PROC_CODE_SZ = (int)((uva_pg_end - uva_pg_start) / PGSIZE);
     
     proc->PROC_STACK_TOP = (MAXUVA - 1) & -16;    //  模仿u-boot
+    proc->PROC_STACK_SZ = 1;
+    proc->PROC_STACK_PG = MAXUVA - PGSIZE * 1;
     
     proc->context.sepc = proc->PROC_ENTRY;
     proc->context.sp = proc->PROC_STACK_TOP;
@@ -402,7 +404,11 @@ int proc_fork(pid_t ppid, pid_t cpid) {
     if (cproc->upgtbl == NULL) {
         return -1;
     }
-    int ret = vm_deep_copy(cproc->upgtbl, pproc->upgtbl);
+    int ret = vm_deep_copy(cproc->upgtbl, pproc->upgtbl, pproc->PROC_CODE_PG, pproc->PROC_CODE_SZ);
+    if (ret == -1) {
+        return -1;
+    }
+    ret = vm_deep_copy(cproc->upgtbl, pproc->upgtbl, pproc->PROC_STACK_PG, pproc->PROC_STACK_SZ);
     if (ret == -1) {
         return -1;
     }
@@ -414,6 +420,8 @@ int proc_fork(pid_t ppid, pid_t cpid) {
     cproc->PROC_CODE_SZ = pproc->PROC_CODE_SZ;
     
     cproc->PROC_STACK_TOP = pproc->PROC_STACK_TOP;
+    cproc->PROC_STACK_PG = pproc->PROC_STACK_PG;
+    cproc->PROC_STACK_SZ = pproc->PROC_STACK_SZ;
     
     cproc->state = RUNNING;
     cproc->sched = SCHEDULABLE;

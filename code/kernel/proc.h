@@ -95,8 +95,9 @@ struct proc {
     ptr_t PROC_CODE_PG;  //  code分配的页起始地址
     int PROC_CODE_SZ;    //  code分配了都少个页
     
-    ptr_t PROC_STACK_TOP;//  用户程序栈顶
-    //int PROC_STACK_SZ;    //  栈用了多少页, 我们暂时不设置这个值
+    ptr_t PROC_STACK_TOP;   //  用户程序栈顶
+    ptr_t PROC_STACK_PG;    //  用户栈起始位置(低地址)
+    int PROC_STACK_SZ;      //  栈用了多少页, 我们暂时不设置这个值
     
     struct spinlock lock;
 };
