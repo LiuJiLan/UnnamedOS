@@ -24,19 +24,17 @@ void syscall_handler(struct trap_regs * regs, struct proc * proc) {
     
     switch (sys_num) {
         case SYS_clone:
-            panic("SYS_CLONE_1");
             sys_clone(mypid);
-            panic("SYS_CLONE_2");
             break;
         
         case SYS_wait4:
-            panic("SYS_WAIT4");
             sys_wait4(regs, mypid);
             break;
             
         case SYS_exit:
             panic("EXIT");
-            sys_wait4(regs, mypid);
+            sys_exit(regs, mypid);
+            panic("EXIT_2");
             break;
             
         case SYS_getppid:

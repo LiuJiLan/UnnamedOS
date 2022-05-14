@@ -577,10 +577,10 @@ void sys_clone(pid_t pid) {
 //  有满足的返回pid, 没有则返回0
 pid_t proc_waiting_set_satisfied(uint64 zombie_bitmap, uint64 waiting_set) {
     if (waiting_set != -1) {
-        zombie_bitmap |= 0x1U << waiting_set;
+        zombie_bitmap &= 0x1U << waiting_set;
     }
     for (int i = 1; i < NPROC; i++) {
-        if (zombie_bitmap | 0x1U << i) {
+        if (zombie_bitmap & 0x1U << i) {
             return i;
         }
     }
@@ -679,7 +679,7 @@ void sys_exit(struct trap_regs * regs, pid_t pid) {
     
     uint64 cpid_bitmap = proc->cpid_bitmap;
     for (int i = 0; i < NPROC; i++) {
-        if (cpid_bitmap | 0x1U << i) {  //  是自己的子进程
+        if (cpid_bitmap & 0x1U << i) {  //  是自己的子进程
             acquire( &(p + i)->lock );
             (p + i)->ppid = ppid;
             release( &(p + i)->lock );

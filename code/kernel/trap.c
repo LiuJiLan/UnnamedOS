@@ -80,7 +80,9 @@ void STIP_handler(struct trap_regs * regs) {
         pid_t my_pid = myproc->pid;
         my_hart()->myproc = NULL;
         
-        panic("time out");
+        char str[12] = "time out:0;";
+        str[9] += my_pid;
+        panic(str);
         
         proc_timeout(my_pid);
         proc_find_runnable_to_run(regs, my_pid);
