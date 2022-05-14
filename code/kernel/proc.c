@@ -24,7 +24,7 @@ extern char initcode_len[];
 
 struct {
     struct spinlock lock;
-    struct proc proctbl[64];
+    struct proc proctbl[NPROC];
 } kproc;
 
 //  注意有两种锁, 一个是进程表的锁, 一个是每个进程(进程表项)的锁
@@ -351,6 +351,7 @@ void proc_find_runnable_to_run(struct trap_regs * regs, pid_t pid) {
                 
                 post_trap_handler(regs);
             } else {
+                release(&(p + i)->lock);
                 continue;
             }
         }
@@ -373,6 +374,7 @@ void proc_find_runnable_to_run(struct trap_regs * regs, pid_t pid) {
                     sbi_set_timer(DEFAULT_SBI_TIMER);
                     post_trap_handler(regs);
                 } else {
+                    release(&(p + i)->lock);
                     continue;
                 }
             }
@@ -613,8 +615,15 @@ void sys_wait4(struct trap_regs * regs, pid_t pid) {
     
     pid_t cpid = proc_waiting_set_satisfied(pproc->zombie_bitmap, pproc->context.a0);
     
+    /*
+    //  FOR DEBUG
+    char str[10] = "wait:0;";
+    str[5] += cpid;
+    panic(str);
+     */
+    
     if (cpid == 0) {
-        if (pproc->context.a2 | WNOHANG) {
+        if (pproc->context.a2 & WNOHANG) {
             release(&kproc.lock);
             release(&pproc->lock);
             pproc->context.a0 = 0;
@@ -646,7 +655,7 @@ void sys_wait4(struct trap_regs * regs, pid_t pid) {
         vm_memmove(pproc->upgtbl, (uptr_t)&cast_xstate, uva, sizeof(uptr_t), 0);
     }
     
-    if (pproc->context.a2 | WUNTRACED) {
+    if (pproc->context.a2 & WUNTRACED) {
         //  只返回不清理
         release(&cproc->lock);
     } else {
@@ -713,11 +722,30 @@ void sys_getppid(pid_t pid) {
     acquire(&kproc.lock);
     
     struct proc * proc = &kproc.proctbl[pid];
-    acquire(&kproc.lock);
+    acquire(&proc->lock);
+    release(&kproc.lock);
     
     proc->context.a0 = proc->ppid;
     proc->context.sepc += 4;
     release(&proc->lock);
     
     return;
+}
+
+void sys_shed_yield(struct trap_regs * regs, pid_t pid) {
+    acquire(&kproc.lock);
+    
+    struct proc * proc = &kproc.proctbl[pid];
+    acquire(&proc->lock);
+    release(&kproc.lock);
+    
+    proc->context.a0 = 0;
+    proc->context.sepc += 4;
+    proc->sched = SCHEDULABLE;
+    release(&proc->lock);
+    
+    vm_2_kpgtbl();
+    my_hart()->myproc = NULL;
+    
+    proc_find_runnable_to_run(regs, pid);
 }

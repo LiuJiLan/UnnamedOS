@@ -14,15 +14,19 @@ int main(void) {
     pid_t cpid = 0;
     
     getpid();
+    getppid();
     
     for (int i = 0; i < 3; i++) {
         cpid = fork();
         if (cpid == 0) {
             while (1) {
-                int conut = 10000;
+                int conut = 0xFFFFFF;
                 while (conut--) {
                 }
                 getpid();
+                if (i == 2) {
+                    sched_yield();
+                }
             }
         }
     }
@@ -38,7 +42,7 @@ int main(void) {
     cpid = fork();
     if (cpid == 0) {
         while (1) {
-            int conut = 10000;
+            int conut = 0xFFFFFF;
             while (conut--) {
             }
             getpid();

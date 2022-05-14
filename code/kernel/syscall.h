@@ -17,6 +17,7 @@
 #define SYS_exit 93
 #define SYS_getppid 173
 #define SYS_getpid 172
+#define SYS_shed_yield 124
 
 void syscall_handler(struct trap_regs * regs, struct proc * proc);
 

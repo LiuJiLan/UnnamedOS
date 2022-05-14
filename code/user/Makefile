@@ -56,7 +56,9 @@ all: syscall_ids.h $(SRCS_ELF)
 	
 clean:
 	@rm -f $(ARCH_DIR)/syscall_ids.h $(SRCS_ELF) $(LIBS_O) $(SRCS_C)
-	@rm -f ./src/init.elf ./src/init.bin
+	@rm -f ./src/init.elf ./src/init.bin ./src/init.txt ./src/init.asm
 
 init: syscall_ids.h ./src/init.elf
 	@${OBJCOPY} -O binary ./src/init.elf ./src/init.bin
+	@$(OBJDUMP) -S ./src/init.elf > ./src/init.asm
+	@$(READELF) -a -W ./src/init.elf > ./src/init.txt
