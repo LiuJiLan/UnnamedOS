@@ -22,5 +22,79 @@
 
 
 
+## 环境配置
+
+本项目在Ubuntu系统上编译、模拟、调试。
+
+> 我个人是在Parallels Desktop虚拟机上跑的Ubuntu, 平时写代码用的是Xcode。
+>
+> - PS: 不知道用M1芯片的Mac能不能正常跑虚拟机并运行, 我用的是Intel芯片的。
+> - PS: 用macOS的同学不要用macOS本身来编译与模拟, 即使你用brew安了gcc也不要这样做。你可能遇到一些意想不到的问题。(例: macOS和Windows一样不区分大小写)
+> - PS: Windows用户强烈不推荐WSL, 另外文件尽量不要用Windows来中转。如果很不幸不能直接在虚拟机中下载, 也请直接导压缩包然后去Linux中去解压。规避一些文件被转换的命运。
+
+用到的工具有:
+
+- gcc-riscv64-unknown-elf
+- QEMU
+- riscv64-unknown-elf-gdb
+
+
+
+### GCC的安装
+
+apt安装即可。
+
+
+
+### QEMU的安装
+
+极其不推荐apt的版本。强烈推荐源码下载编译, 可以参考一下[rCore教程](https://rcore-os.github.io/rCore_tutorial_doc/chapter2/part5.html)。但不得不说下载编译很麻烦。
+
+可能遇到的问题如下:
+
+- ERROR: Cannot find Ninja
+
+  解决方法: ```sudo apt install ninja-build```
+
+- ERROR: glib-2.56 gthread-2.0 is required to compile QEMU
+
+  参考[这个博客](https://blog.csdn.net/fuxy3/article/details/104732541)
+
+我个人的安装过程给一个参考:
+
+```shell
+wget https://download.qemu.org/qemu-6.1.1.tar.xz
+tar xvJf qemu-6.1.1.tar.xz
+cd qemu-6.1.1
+./configure --target-list=riscv64-softmmu,riscv32-softmmu
+cd build
+make -j$(nproc)
+make install
+```
+
+> PS: qemu对RISC-V的模拟本身就存在一些问题, 可以去给他们提issue。
+
+
+
+### GDB的安装
+
+首先不推荐使用RVOS所使用的gdb-multiarch, 使用中确实出了不少问题, 不知道现在是否已经修复了。
+
+个人推荐使用riscv64-unknown-elf-gdb。其安装可以参考[rCore教程](https://rcore-os.github.io/rCore-Tutorial-deploy/docs/pre-lab/gdb.html), 但我个人不推荐使用教程里的那个插件。
+
+
+
+## 项目结构
+
+主要的代码都在code文件夹下。
+
+backup文件夹或者标有`.back`或者`.backup`都是写废的文件。有一些掉过的坑, 感兴趣可以瞅瞅, 说不定能解决一些问题。
+
+script里是一些脚本, 一些方便开发用的, **一些参与了编译**(例如将一些代码内嵌进内核)。xv6用Perl, 我则用了Python。
+
+
+
 # Design
+
+
 
