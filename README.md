@@ -1,120 +1,26 @@
-# xv6-qemu
-尝试xv6在qemu-system-riscv64的移植
+# Unnamed Operating System Project
 
-# 1.资料对照
-1.  有关代码中参考的操作系统
-
-* **xv6** 指 
-[xv6-public](https://github.com/mit-pdos/xv6-public)
-> 基于x86体系, 现已不再维护。  
->
-> 最后的版本为`Commits on Aug 11, 2020`   
->
-> 个人习惯称这个版本为`xv6`
-
-* **xv6-riscv** 指
-[xv6-riscv](https://github.com/mit-pdos/xv6-riscv)
-> 其与xv6相比更改了部分的实现  
->
-> 我个人还是对xv6中的一些部分更加满意(比如console输出部分)
-
-* **书中版本** 指
-《操作系统原型——xv6分析与实验》中的xv6版本
-> 没有去仔细对比, 但通过对比`bio.c`中的`binit()`函数,
->
-> 基本可以确定书中版本应该是
->
-> `Commits on Sep 12, 2016`版本之前的版本
-
-* **rCore** 指
-[rCore](https://github.com/rcore-os/rCore)
-> 基于了SBI, 起始运行在0x8020_0000, S态  
->
-> 而xv6-riscv则起始运行在0x8000_0000, M态  
->
-> 但是要指出, **xv6-riscv的主核心还是在S态的**
-
-* **rCore教学版** 指
-[rCore-Tutorial-Book-v3](https://github.com/rcore-os/rCore-Tutorial-Book-v3)
-> rCore的教学版本, 在地址映射方面和rCore有一些区别  
->
-> 教程直接可以看[这里](https://rcore-os.github.io/rCore-Tutorial-Book-v3/)
+**PS: 系统不叫Unnamed, 我是真的没想好名字。**
 
 
-# 2.环境设置
 
-* **RISC-V编译器**
-> 我们直接使用apt安装`gcc-riscv64-unknown-elf`
-```
-$ sudo apt update
-$ sudo apt install gcc-riscv64-unknown-elf
-```
+## 注意事项
 
-* **GDB调试**
-> 参考rCore教程[gdb相关部分](https://rcore-os.github.io/rCore-Tutorial-deploy/docs/pre-lab/gdb.html)  
->
-> 暂不推荐使用`gdb-multiarch`, 虽然其可以直接apt安装, 
-> 但是其使用中存在一些问题
-
-* **QEMU模拟器**
-> 参考rCore教程[qemu相关部分](https://rcore-os.github.io/rCore_tutorial_doc/chapter2/part5.html)  
->
-> 注意: apt安装的qemu版本只有4.几  
->
-> 这里放上我配环境的过程:
-```
-wget https://download.qemu.org/qemu-6.1.1.tar.xz
-tar xvJf qemu-6.1.1.tar.xz
-cd qemu-6.1.1
-./configure --target-list=riscv64-softmmu,riscv32-softmmu
-cd build
-make -j$(nproc)
-make install
-```
->   
->  **可能出现的问题**
->  * ```ERROR: Cannot find Ninja```
->> 解决方法: ```sudo apt install ninja-build```
->
->  * ```ERROR: glib-2.56 gthread-2.0 is required to compile QEMU```
->> 参考[此处](https://blog.csdn.net/fuxy3/article/details/104732541)
+1. 本文件由MarkDown编辑器软件自动排版, Raw Code会略显混乱, 使用相应软件或网站查看本文档以获得更好的体验。
+2. 本文件中可能会使用Mermaid渲染图片。使用集成了Mermaid渲染功能的Markdown编辑器或网站查看本文档以获得更好的体验。
+3. 本文件编辑时使用的主题是Typora的Github(浅色主题)与Night(深色主题)。如果使用Typora可以选择这两个主题以获得与作者相同的观看体验。
 
 
-# 3.项目结构
 
-之后来补齐
+## 项目介绍
 
-# 4.To Do List
-
-## To Do
-* [ ] test
-
-## Done
+1. 本项目试图实现一个运行在RISC-V 64架构下的Unix-like操作系统内核与部分用户态程序。
+2. 本项目有两个主要目的: 一个是为了[操作系统比赛](https://os.educg.net)(OS内核实现赛道), 另一个是为了我个人对CPU、操作系统与编译器的一些练习。所以在本项目中可能会看到面对内核赛与我个人目标的一些不同的实现。
+3. 本项目对于我个人的练习目的而言: 先实现操作系统, 然后尽量精简操作系统所使用的指令与外部设备, 依据这些指令与外设用FPGA实现一个基于RISC-V ISA的子集SoC系统, 然后实现一个基于这个操作系统的自己写的编译器。
+4. 本项目曾用名`xv6-qemu`, 正如其名, 原本是想对[xv6-public](https://github.com/mit-pdos/xv6-public)进行模仿, 但是最终秉承着**改别人代码不如自己重头写**的观点推翻重做。在本项目也学习了[xv6-riscv](https://github.com/mit-pdos/xv6-riscv)(部分函数, 页表函数的部分处理)、[rCore](https://github.com/rcore-os/rCore)(高地址内存的分布)、[RVOS](https://github.com/plctlab/riscv-operating-system-mooc)(UART、CLINT、PLIC的一些寄存器读写)与[内核赛测试用例](https://gitee.com/oscomp/testsuits-for-oskernel/tree/main)(用户态的crt, 部分库)。
+5. 除主要目标之外, 还希望本项目能给他人一些参考, 做一些微小的贡献。
 
 
-# 5.Note
 
-## qemu -m 参数
+# Design
 
-手头版本使用`-m 6M`参数会导致dtb的地址为0x8000_0000, 取消此参数dtb的地址将会是默认值0x8700_0000。固我们暂时删除了这个参数。
-
-
-# 6.XV6中改进点
-
-
-1.  xv6采用了分页机制与虚拟地址的术语, 但没有实现页帧与磁盘的交换[P119]
->由于没有实现“页帧与磁盘的交换”, 所以没有理论上不会出现所谓缺页的情况, 这里**暂不清楚**xv6是否缺乏对缺页的处理[P152]
-2.  xv6没有实现对x86内存总量的测定(`kinit1()`与`kinit2()`)[P120]
-3.  xv6对物理页帧的管理非常简单(`kalloc()`与`kfree()`)[P126]
-4.  xv6的进程亲缘关系组织比Linux要简单得多, 只有父进程关系, 无法直接知道自己的子进程和兄弟进程[P52][P157]
-5.  对比Linux的文件系统, 由于Linux的VFS使用页缓存和文件映射页,...。xv6fs与虚存无关, 因此要相对简单得多。[P333]
-6.  ...xv6的块I/O层比较简单,...[P345]
-7.  日志操作使得每个文件的写操作都分成两次操作, 降低了写效率。(不知道有没有方法改进)[P401]
-8.  IDE驱动(访问硬盘的驱动)程序中并没有使用DMA方法,...[P444]
-9.  (硬盘缓存)当块缓存数量很大时, ...线性搜索的方式是比较低效的, 可以考虑使用hash链...[P351]
-10. (代码注释)...should be one superblock per disk device, ...run with only one device[P352]
-11. (inode的iget函数)...发现没有空闲的缓存,...实际上xv6只是panic而没有进行回收[P359]
-12. Linux系统的内存inode是VFS inode的抽象, 而磁盘上则可以是各种具体不同的ext2的inode、xfs的inode等等[P379]
-13. ...xv6的设备操作非常简陋, 只有读写操作, 而没有Linux设备中的ioctl()等操作[P379]
-14. (不知算不算是改进点)xv6并不是一个进程占有一个时间片, 比如进程A运行了半个时间片然后提前主动让出给进程B, 那B只能运行剩下的半个时间片然后被调度[P53]
-15. ..., 多个处理器共用一个就绪任务队列并按照轮询方式进行调度。...只是在调度中简单地处理负载均衡问题。[P56]
