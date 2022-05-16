@@ -126,7 +126,7 @@ graph LR
 	RG --> |INTERRUPTIBLE| S
 	RG --> |ZOMBIE| Z
 	Z --> |USABLE| D
-	D --> |RUNNING</br>UNSCHEDULABLE| RE
+	D --> |RUNNING</br>UNUSABLE| RE
 ```
 
 
@@ -147,6 +147,24 @@ PS: execve我们没有被放入这个表中, 毕竟本质只是向当前进程�
 
 
 ### 进程状态转移图
+
+```mermaid
+graph LR
+	RG((RUNNING))
+	RE((RUNNABLE))
+	S((SLEEP))
+	Z((ZOMBIE))
+	D((DEAD))
+	RG --> |SYS_shed_yield| RE
+	RE --> |被选中运行| RG
+	S --> |系统调用被满足| RE
+	RG --> |系统调用不满足</br>被挂起| S
+	RG --> |SYS_exit| Z
+	Z --> |SYS_wait4</br>子进程| D
+	D --> |SYS_clone</br>子进程| RE
+```
+
+
 
 
 
