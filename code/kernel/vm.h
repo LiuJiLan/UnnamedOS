@@ -77,3 +77,17 @@ void vm_2_proc_upgtbl(pgtbl_t upgtbl);
 //        return 0
 
 //  例如现在proc中的proc_load_bin函数中的实现就是一种错误实现
+//  或者参考xv6-riscv中读盘的设计:
+//    static int
+//    alloc3_desc(int *idx)
+//    {
+//      for(int i = 0; i < 3; i++){
+//        idx[i] = alloc_desc();
+//        if(idx[i] < 0){
+//          for(int j = 0; j < i; j++)
+//            free_desc(idx[j]);
+//          return -1;
+//        }
+//      }
+//      return 0;
+//    }

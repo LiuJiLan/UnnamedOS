@@ -111,13 +111,12 @@ struct proc {
 //  因为父进程变为ZOMBIE时, 子进程有可能变为孤儿进程,
 //  所以在(父进程的)exit系统调用中父进程会更改所有子进程的ppid
 
-void pre_first_run_proc(struct trap_regs * regs);
 void procinit(void);
 
 void proc_context_copyin(struct trap_regs * regs, struct context * proc_context);
 void proc_context_copyout(struct trap_regs * regs, struct context * proc_context);
 int proc_load_bin(pid_t pid, char* kva_start, size_t len);
-void proc_find_runnable_to_run(struct trap_regs * regs, pid_t pid);
+void proc_find_runnable_to_run(pid_t pid);
 
 void proc_acquire_proctbl_lock(void);
 void proc_release_proctbl_lock(void);
@@ -126,7 +125,7 @@ void proc_release_proc_lock(pid_t pid);
 
 void proc_timeout(pid_t pid);
 
-void proc_sleep_proc(struct trap_regs * regs, pid_t pid);
+void proc_sleep_proc(pid_t pid);
 void proc_wakeup_proc(pid_t pid);
 
 void proc_handle_syscall(struct trap_regs * regs, pid_t pid);

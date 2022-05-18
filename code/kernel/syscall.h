@@ -19,6 +19,9 @@
 #define SYS_getpid 172
 #define SYS_shed_yield 124
 
+#define SYS_umount  39
+#define SYS_mount   40
+
 void syscall_handler(struct trap_regs * regs, struct proc * proc);
 
 #endif /* syscall_h */

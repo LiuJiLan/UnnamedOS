@@ -56,10 +56,7 @@ void kmain(void) {
         panic("OTHER HART 0 IS OK");
     }
     
-    struct trap_regs regs;
-    pre_first_run_proc(&regs);
-    sbi_set_timer(DEFAULT_SBI_TIMER);
-    proc_find_runnable_to_run(&regs, 0);
+    proc_find_runnable_to_run(0);
 }
 
 void kinit1(void) {

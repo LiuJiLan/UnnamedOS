@@ -315,7 +315,7 @@ int proc_load_bin(pid_t pid, char* kva_start, size_t len) {
 
 //  每个CPU在第一次运行进程之前应该临时的给出一个regs的结构体
 //  注意, 应该确保这个trap_regs结构体的生命周期
-void pre_first_run_proc(struct trap_regs * regs) {
+void proc_init_trap_context(struct trap_regs * regs) {
     regs->tp = r_tp();
     regs_t sstatus = r_sstatus();
     sstatus |= 0x1U << 5;    //  SPIE, 开中断
@@ -326,8 +326,10 @@ void pre_first_run_proc(struct trap_regs * regs) {
 //  由于我们暂时采取的是不断的按顺序寻找
 //  pid用于避免较小pid号的刚刚被标为RUNNABLE的进程马上被重新唤醒
 //  而导致较大的pid号的进程不容易被选中的情况
-void proc_find_runnable_to_run(struct trap_regs * regs, pid_t pid) {
+void proc_find_runnable_to_run(pid_t pid) {
     struct proc * p = &kproc.proctbl[0];
+    struct trap_regs regs;  //  注意其实不需要传入regs了, 因为该保存的都保存了
+    proc_init_trap_context(&regs);
     
     //  第一次循环
     for (int i = (pid + 1) % NPROC; i < NPROC; i++) {
@@ -343,13 +345,13 @@ void proc_find_runnable_to_run(struct trap_regs * regs, pid_t pid) {
                 //  对单进程做完写操作就可以放锁了
                 
                 my_hart()->myproc = (p + i);
-                proc_context_copyout(regs, &(p + i)->context);
+                proc_context_copyout(&regs, &(p + i)->context);
                 vm_2_proc_upgtbl((p + i)->upgtbl);
                 
                 //  重制一下时间
                 sbi_set_timer(DEFAULT_SBI_TIMER);
                 
-                post_trap_handler(regs);
+                post_trap_handler(&regs);
             } else {
                 release(&(p + i)->lock);
                 continue;
@@ -369,10 +371,10 @@ void proc_find_runnable_to_run(struct trap_regs * regs, pid_t pid) {
                     (p + i)->sched = UNSCHEDULABLE;
                     release(&(p + i)->lock);
                     my_hart()->myproc = (p + i);
-                    proc_context_copyout(regs, &(p + i)->context);
+                    proc_context_copyout(&regs, &(p + i)->context);
                     vm_2_proc_upgtbl((p + i)->upgtbl);
                     sbi_set_timer(DEFAULT_SBI_TIMER);
-                    post_trap_handler(regs);
+                    post_trap_handler(&regs);
                 } else {
                     release(&(p + i)->lock);
                     continue;
@@ -464,7 +466,7 @@ void proc_timeout(pid_t pid) {
 //  则休眠并找到一个新的进程
 //  如果不是, 则说明这个sleep是由于中断处理提起,
 //  但是任然没有满足的情况则什么都不做
-void proc_sleep_proc(struct trap_regs * regs, pid_t pid) {
+void proc_sleep_proc(pid_t pid) {
     acquire(&kproc.lock);
     acquire(&kproc.proctbl[pid].lock);
     release(&kproc.lock);
@@ -476,7 +478,7 @@ void proc_sleep_proc(struct trap_regs * regs, pid_t pid) {
         vm_2_kpgtbl();
         my_hart()->myproc = NULL;
         
-        proc_find_runnable_to_run(regs, pid);
+        proc_find_runnable_to_run(pid);
     }
     
     release(&kproc.proctbl[pid].lock);
@@ -592,7 +594,7 @@ pid_t proc_waiting_set_satisfied(uint64 zombie_bitmap, uint64 waiting_set) {
 #define WNOHANG         0x00000001  //  0b001
 #define WUNTRACED       0x00000002  //  0b010
 
-void sys_wait4(struct trap_regs * regs, pid_t pid) {
+void sys_wait4(pid_t pid) {
     struct proc * pproc = &kproc.proctbl[pid];
     //  这里的parent proc指的是自己
     
@@ -638,7 +640,7 @@ void sys_wait4(struct trap_regs * regs, pid_t pid) {
         vm_2_kpgtbl();
         my_hart()->myproc = NULL;
         
-        proc_find_runnable_to_run(regs, pid);
+        proc_find_runnable_to_run(pid);
         //  特殊方式的转跳
     }
     
@@ -675,7 +677,7 @@ void sys_wait4(struct trap_regs * regs, pid_t pid) {
     return;
 }
 
-void sys_exit(struct trap_regs * regs, pid_t pid) {
+void sys_exit(pid_t pid) {
     acquire(&kproc.lock);
     struct proc * p = &kproc.proctbl[0];
     
@@ -715,7 +717,7 @@ void sys_exit(struct trap_regs * regs, pid_t pid) {
     vm_2_kpgtbl();
     my_hart()->myproc = NULL;
     
-    proc_find_runnable_to_run(regs, pid);
+    proc_find_runnable_to_run(pid);
 }
 
 void sys_getppid(pid_t pid) {
@@ -732,7 +734,7 @@ void sys_getppid(pid_t pid) {
     return;
 }
 
-void sys_shed_yield(struct trap_regs * regs, pid_t pid) {
+void sys_shed_yield(pid_t pid) {
     acquire(&kproc.lock);
     
     struct proc * proc = &kproc.proctbl[pid];
@@ -747,5 +749,5 @@ void sys_shed_yield(struct trap_regs * regs, pid_t pid) {
     vm_2_kpgtbl();
     my_hart()->myproc = NULL;
     
-    proc_find_runnable_to_run(regs, pid);
+    proc_find_runnable_to_run(pid);
 }
