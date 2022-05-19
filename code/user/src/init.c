@@ -66,7 +66,7 @@ int main(void) {
     while(1) {
         //  由于sleep的bug, 我们现在必须要先这样子
         //  之后要设计开S态下的中断
-        waitpid(-1, NULL, 0x2, NULL);
+        waitpid(-1, NULL, 0x1, NULL);
     }
     return 0;
 }

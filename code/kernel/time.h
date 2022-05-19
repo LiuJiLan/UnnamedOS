@@ -22,7 +22,7 @@ static struct {
 //  其实应该上锁, 因为本质上数据的值需要计算步骤, 会导致别的CPU读取到不正确的值
 
 void time_init(void);
-void time_tick(void);
+extern void (* time_tick)(void);
 uint64 time_get_nsec(void);
 uint64 time_get_sec(void);
 

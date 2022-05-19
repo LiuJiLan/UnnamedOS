@@ -745,4 +745,5 @@ http://www.science.unitn.it/~fiorella/guidelinux/tlk/node102.html
 - [ ] 比赛要求的nanosleep的结构体和Linux中的结构体不一样
 - [ ] 时间的获取其实应该用RTC, 而不是现在使用的时钟中断
 - [ ] times系统调用没有实现
+- [ ] 检查所有的常量的尾部数据是否正确!!!
 

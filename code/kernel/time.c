@@ -14,9 +14,14 @@
 extern void panic(char * s);
 
 static uint64 NMTI_PER_NSEC;
-#define POW_TEN_NINE 1000000000U
+static uint64 NNSEC_PER_MTI;
+#define POW_TEN_NINE 1000000000ULL  //  一定要标注ULL
+//  BUG原因, 除法的时候前几个常量的位宽太小
+
+void (* time_tick)(void);
 
 static volatile uint64 mti_cnt;
+static volatile uint64 nano_cnt;
 
 struct sleep_entry{
     volatile enum {UNSET = 0, SET} is_set;
@@ -29,17 +34,30 @@ struct {
     struct spinlock lock;
 } ksleep;
 
+void time_tick_frequency_major(void);
+void time_tick_time_major(void);
+
 void time_init(void) {
     ktime.nsec = 0;
     ktime.sec = 0;
     mti_cnt = 0;
-    NMTI_PER_NSEC = MECHINE_FEQUENCY / (DEFAULT_TIME * 1000000U) + 1;
+    nano_cnt = 0;
+    NMTI_PER_NSEC = MECHINE_FREQUENCY / (DEFAULT_INTERVAL * POW_TEN_NINE) + 1;
+    NNSEC_PER_MTI = DEFAULT_INTERVAL * POW_TEN_NINE / MECHINE_FREQUENCY;
+    
+    if (NMTI_PER_NSEC == 1) {
+        time_tick = time_tick_time_major;
+    } else {
+        time_tick = time_tick_frequency_major;
+    }
+    
     initlock(&ktime.lock, "time");
     memset(&ksleep, 0, sizeof(ksleep));
     initlock(&ksleep.lock, "sleep");
 }
 
-void time_tick(void) {
+void time_tick_frequency_major(void) {
+    //  频率很高
     mti_cnt++;
     if (mti_cnt != 0 && mti_cnt % NMTI_PER_NSEC == 0) {
         mti_cnt -= NMTI_PER_NSEC;
@@ -52,6 +70,19 @@ void time_tick(void) {
         }
         release(&ktime.lock);
     }
+}
+
+void time_tick_time_major(void) {
+    //  一次中断会度过多个nano second
+    nano_cnt += NNSEC_PER_MTI;
+    
+    acquire(&ktime.lock);
+    
+    ktime.sec += nano_cnt / POW_TEN_NINE;
+    nano_cnt %= POW_TEN_NINE;
+    ktime.nsec += nano_cnt;
+    
+    release(&ktime.lock);
 }
 
 uint64 time_get_nsec(void) {
@@ -113,6 +144,7 @@ void time_ring_clock(void) {
             str[5] += i;
             panic(str);
             ringtest(str);
+            str[5] = '0';
         }
     }
     release(&ksleep.lock);
