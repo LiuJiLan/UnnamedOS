@@ -10,12 +10,12 @@
 
 extern void panic(char * s);
 
-extern void sys_clone(pid_t pid);
-extern void sys_wait4(pid_t pid);
-extern void sys_exit(pid_t pid);
-extern void sys_getppid(pid_t pid);
+extern void sys_clone(struct proc * proc);
+extern void sys_wait4(struct proc * proc);
+extern void sys_exit(struct proc * proc);
+extern void sys_getppid(struct proc * proc);
 //extern void sys_getpid(void);
-extern void sys_shed_yield(pid_t pid);
+extern void sys_shed_yield(struct proc * proc);
 
 void syscall_handler(struct trap_regs * regs, struct proc * proc) {
     regs_t sys_num = proc->context.a7;
@@ -29,22 +29,22 @@ void syscall_handler(struct trap_regs * regs, struct proc * proc) {
     switch (sys_num) {
         case SYS_clone:
             panic("SYS_clone");
-            sys_clone(mypid);
+            sys_clone(proc);
             break;
         
         case SYS_wait4:
             panic("SYS_wait4");
-            sys_wait4(mypid);
+            sys_wait4(proc);
             break;
             
         case SYS_exit:
             panic("SYS_exit");
-            sys_exit(mypid);
+            sys_exit(proc);
             break;
             
         case SYS_getppid:
             panic("SYS_getppid");
-            sys_getppid(mypid);
+            sys_getppid(proc);
             break;
             
         case SYS_getpid:
@@ -56,7 +56,7 @@ void syscall_handler(struct trap_regs * regs, struct proc * proc) {
             
         case SYS_shed_yield:
             panic("SYS_shed_yield");
-            sys_shed_yield(mypid);
+            sys_shed_yield(proc);
             break;
             
         case SYS_umount:

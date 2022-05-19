@@ -115,7 +115,7 @@ void procinit(void);
 
 void proc_context_copyin(struct trap_regs * regs, struct context * proc_context);
 void proc_context_copyout(struct trap_regs * regs, struct context * proc_context);
-int proc_load_bin(pid_t pid, char* kva_start, size_t len);
+
 void proc_find_runnable_to_run(pid_t pid);
 
 void proc_acquire_proctbl_lock(void);

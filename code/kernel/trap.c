@@ -85,7 +85,7 @@ void STIP_handler(struct trap_regs * regs) {
         panic(str);
         
         proc_timeout(my_pid);
-        proc_find_runnable_to_run(regs, my_pid);
+        proc_find_runnable_to_run(my_pid);
     } else {
         //  时间片用完的情况在proc_find_runnable_to_run
         //  重设了时间片

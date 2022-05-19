@@ -537,10 +537,10 @@ pid_t proc_find_usable_to_use(void) {
 }
 
  
-void sys_clone(pid_t pid) {
+void sys_clone(struct proc * pproc) {
     acquire(&kproc.lock);
     
-    struct proc * pproc = &kproc.proctbl[pid];
+    pid_t ppid = pproc->pid;
     //  这里的parent proc指的是自己
     
     pid_t cpid = proc_find_usable_to_use();
@@ -556,7 +556,7 @@ void sys_clone(pid_t pid) {
     acquire(&pproc->lock);
     acquire(&cproc->lock);
     
-    int ret = proc_fork(pid, cpid);
+    int ret = proc_fork(ppid, cpid);
     
     if (ret == -1) {
         release(&pproc->lock);
@@ -594,8 +594,8 @@ pid_t proc_waiting_set_satisfied(uint64 zombie_bitmap, uint64 waiting_set) {
 #define WNOHANG         0x00000001  //  0b001
 #define WUNTRACED       0x00000002  //  0b010
 
-void sys_wait4(pid_t pid) {
-    struct proc * pproc = &kproc.proctbl[pid];
+void sys_wait4(struct proc * pproc) {
+    pid_t ppid = pproc->pid;
     //  这里的parent proc指的是自己
     
     if (pproc->cpid_bitmap == 0) {
@@ -617,12 +617,10 @@ void sys_wait4(pid_t pid) {
     
     pid_t cpid = proc_waiting_set_satisfied(pproc->zombie_bitmap, pproc->context.a0);
     
-    /*
     //  FOR DEBUG
     char str[10] = "wait:0;";
     str[5] += cpid;
     panic(str);
-     */
     
     if (cpid == 0) {
         if (pproc->context.a2 & WNOHANG) {
@@ -640,13 +638,17 @@ void sys_wait4(pid_t pid) {
         vm_2_kpgtbl();
         my_hart()->myproc = NULL;
         
-        proc_find_runnable_to_run(pid);
+        proc_find_runnable_to_run(ppid);
         //  特殊方式的转跳
     }
     
     struct proc * cproc = &kproc.proctbl[cpid];
     acquire(&cproc->lock);
     
+    //  FOR DEBUG
+    char str2[10] = "kill:0;";
+    str2[5] += cpid;
+    panic(str2);
     
     uptr_t uva = pproc->context.a1;
     if (uva) {  //  wstatus != NULL
@@ -677,17 +679,17 @@ void sys_wait4(pid_t pid) {
     return;
 }
 
-void sys_exit(pid_t pid) {
+void sys_exit(struct proc * proc) {
     acquire(&kproc.lock);
-    struct proc * p = &kproc.proctbl[0];
     
-    struct proc * proc = &kproc.proctbl[pid];
+    pid_t pid = proc->pid;
     acquire(&proc->lock);   //  先上自己的锁
     
     pid_t ppid = proc->ppid;
     struct proc * pproc = &kproc.proctbl[ppid];
     acquire(&pproc->lock);   //  再上自己父进程的锁
     
+    struct proc * p = &kproc.proctbl[0];
     uint64 cpid_bitmap = proc->cpid_bitmap;
     for (int i = 0; i < NPROC; i++) {
         if (cpid_bitmap & 0x1U << i) {  //  是自己的子进程
@@ -702,6 +704,7 @@ void sys_exit(pid_t pid) {
     proc->state = (int)proc->context.a0;
     pproc->cpid_bitmap |= proc->cpid_bitmap;
     pproc->zombie_bitmap |= proc->zombie_bitmap;
+    pproc->zombie_bitmap |= 0x1U << pid;
     
     proc->state = ZOMBIE;
     release(&proc->lock);   //  放自己的锁
@@ -720,10 +723,9 @@ void sys_exit(pid_t pid) {
     proc_find_runnable_to_run(pid);
 }
 
-void sys_getppid(pid_t pid) {
+void sys_getppid(struct proc * proc) {
     acquire(&kproc.lock);
     
-    struct proc * proc = &kproc.proctbl[pid];
     acquire(&proc->lock);
     release(&kproc.lock);
     
@@ -734,10 +736,10 @@ void sys_getppid(pid_t pid) {
     return;
 }
 
-void sys_shed_yield(pid_t pid) {
+void sys_shed_yield(struct proc * proc) {
     acquire(&kproc.lock);
     
-    struct proc * proc = &kproc.proctbl[pid];
+    pid_t pid = proc->pid;
     acquire(&proc->lock);
     release(&kproc.lock);
     
