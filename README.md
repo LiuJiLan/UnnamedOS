@@ -166,6 +166,120 @@ graph LR
 
 
 
+## 时间管理
+
+**时间的管理暂时只使用时钟中断来实现, 正式实现应该使用RTC外设。**
+
+
+
+### 比赛所要求的有关时间的部分
+
+```c
+typedef struct
+{
+    uint64 sec;  // 自 Unix 纪元起的秒数
+    uint64 usec; // 微秒数
+} TimeVal;
+
+int64 get_time()
+{
+    TimeVal time;
+    int err = sys_get_time(&time, 0);
+    if (err == 0)
+    {
+        return ((time.sec & 0xffff) * 1000 + time.usec / 1000);
+    }
+    else
+    {
+        return -1;
+    }
+}
+
+int sys_get_time(TimeVal *ts, int tz)
+{
+    return syscall(SYS_gettimeofday, ts, tz);
+}
+
+int sleep(unsigned long long time)
+{
+    TimeVal tv = {.sec = time, .usec = 0};
+    if (syscall(SYS_nanosleep, &tv, &tv)) return tv.sec;
+    return 0;
+}
+```
+
+
+
+### 我们的设计
+
+
+
+- 在内存中维护三个数据用于维护时间:
+
+| 名称    | 解释                         | 行为                           |
+| :------ | :--------------------------- | ------------------------------ |
+| mti_cnt | Mechine Time Interrupt Count | 每当hart0发生时钟中断则加1     |
+| nsec    | 纳秒                         | 每当mti_cnt累计到对应数值则加1 |
+| sec     | 秒                           | 每当nsec累计到对应数值则加1    |
+
+
+
+- 以下四个常量用于计算:
+
+| 名称             | 解释                     |
+| :--------------- | :----------------------- |
+| DEFAULT_INTERVAL | 默认时钟中断间隔         |
+| MECHINE_FEQUENCY | 所使用机器的频率, 单位Hz |
+| NMTI_PER_NSEC    | 每纳秒发生MTI的数量      |
+| NNSEC_PER_MTI    | 每MTI走过的纳秒数量      |
+
+*NMTI_PER_NSEC: the Number of Mechine Time Interrupt PER NanoSECond.*
+
+*NNSEC_PER_MTI: the Number of NanoSECond PER Mechine Time Interrupt.*
+
+
+
+- NMTI_PER_NSEC计算方法:
+
+  ${NMTI\_PER\_NSEC} = \dfrac{1 \times 10^{-9} \times f_{(MECHINE\_FEQUENCY)}}{N_{(DEFAULT\_INTERVAL)}}$
+
+  1. 实际计算的时候应该考虑到我们的程序全部使用整数来计算。
+
+     ${NMTI\_PER\_NSEC} = \dfrac{f}{N\times 10^9}$
+
+  2. 在我们的设计中在取近似数时, 应该使算出的一秒的时间>=实际的一秒。
+
+     ${NMTI\_PER\_NSEC} = int(\dfrac{f}{N\times 10^9}) + 1$
+
+
+
+- NNSEC_PER_MTI计算方法:
+
+  ${NNSEC\_PER\_MTI} = \dfrac{1}{1}$
+
+
+
+- PS:
+
+  由[这里](https://www.qemu.org/docs/master/system/qemu-manpage.html)可知, qemu模拟器的时钟频率是44100Hz。
+
+  **BUG: MECHINE_FEQUENCY太小时会有些离谱**
+
+
+
+### 与时间管理有关的系统调用
+
+| Linux调用号 | 调用名           |
+| :---------- | ---------------- |
+| 101         | SYS_nanosleep    |
+| 169         | SYS_gettimeofday |
+
+SYS_times系统调用我们没有放在这一块。
+
+这里应该注意的是:
+
+**这两个系统调用在测试用例中说的结构体是TimeVal, 但是实际上的linux中只有timeval结构体, 而且Linux中这两个系统调使用的是timespec结构体。**
+
 
 
 # 文档格式要求

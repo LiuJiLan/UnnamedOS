@@ -637,6 +637,42 @@ gcc在远古版本有个-fipa-struct-reorg选项可以结构重排序
 
 
 
+## SYS_brk
+
+```
+brk
+# 0是比赛要求, 是返回当前的brk值
+request
+if request == 0:
+	return 当前brk
+	
+if request > 当前brk:
+	检查当前实际分配的页大小
+	if <= 当前实际分配的页大小:
+		设置当前的brk
+		return 0;
+	else:
+		分配页
+		if 分配页成果:
+			设置当前的brk
+			return 0;
+		else:
+			return -1;
+
+if request <= 当前brk:
+	#把等于号放在这里, 少一些问题
+	if request < code实际的结尾:
+		return -1;
+	else:
+		#ROUNDUP_PAGE(代码结尾)
+		#回收
+		设置当前的brk
+		return 0;
+	
+```
+
+
+
 
 
 ## 策略
@@ -648,4 +684,65 @@ gcc在远古版本有个-fipa-struct-reorg选项可以结构重排序
 # VFS
 
 http://www.science.unitn.it/~fiorella/guidelinux/tlk/node102.html
+
+
+
+### 我们的设计
+
+
+
+- 在内存中维护三个数据用于维护时间:
+
+| 名称    | 解释                         | 行为                           |
+| :------ | :--------------------------- | ------------------------------ |
+| mti_cnt | Mechine Time Interrupt Count | 每当hart0发生时钟中断则加1     |
+| nsec    | 纳秒                         | 每当mti_cnt累计到对应数值则加1 |
+| sec     | 秒                           | 每当nsec累计到对应数值则加1    |
+
+
+
+- 以下三个常量用于计算:
+
+| 名称             | 解释                     |
+| :--------------- | :----------------------- |
+| DEFAULT_INTERVAL | 默认时钟中断间隔         |
+| MECHINE_FEQUENCY | 所使用机器的频率, 单位Hz |
+| NMTI_PER_NSEC    | 每微秒发生MTI的数量      |
+
+*NMTI_PER_NSEC: the Number of Mechine Time Interrupt PER NanoSECond.*
+
+
+
+- NMTI_PER_NSEC计算方法:
+
+  ${NMTI\_PER\_NSEC} = \dfrac{1 \times 10^{-9} \times f_{(MECHINE\_FEQUENCY)}}{N_{(DEFAULT\_INTERVAL)}}$
+
+  1. 实际计算的时候应该考虑到我们的程序全部使用整数来计算。
+
+     ${NMTI\_PER\_NSEC} = \dfrac{f}{N\times 10^9}$
+
+  2. 在我们的设计中在取近似数时, 应该使算出的一秒的时间>=实际的一秒。
+
+     ${NMTI\_PER\_NSEC} = int(\dfrac{f}{N\times 10^9}) + 1$
+
+
+
+- PS:
+
+  由[这里](https://www.qemu.org/docs/master/system/qemu-manpage.html)可知, qemu模拟器的时钟频率是44100Hz。
+
+  **BUG: MECHINE_FEQUENCY太小时会有些离谱, 这样按公式, 约出的NMTI_PER_NSEC = 1, 会导致时间被放大的非常可怕**
+
+
+
+# 代办事项
+
+- [ ] mount系统
+- [ ] brk修改成标准, 比赛中的brk(0)其实是oldbrk可以从mm_struct的 brk成分中获取, [这里](https://blog.csdn.net/sykpour/article/details/25155869)
+- [ ] brk中申请增加时, <=的设计是否正确
+- [ ] 把user部分Makefile和文件组成写简洁点, 起码能让Xcode认出来
+- [ ] brk中增加时只默认增加了一个页, 缩小的时候没有回收,  这是BUG
+- [ ] 比赛要求的nanosleep的结构体和Linux中的结构体不一样
+- [ ] 时间的获取其实应该用RTC, 而不是现在使用的时钟中断
+- [ ] times系统调用没有实现
 

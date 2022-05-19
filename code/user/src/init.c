@@ -19,13 +19,20 @@ int main(void) {
     for (int i = 0; i < 3; i++) {
         cpid = fork();
         if (cpid == 0) {
+            int count2 = 0;
             while (1) {
-                int conut = 0xFFFFFF;
+                int conut = 0x10000;
                 while (conut--) {
                 }
+                count2++;
                 getpid();
                 if (i == 2) {
                     sched_yield();
+                } else {
+                    sleep(1);
+                }
+                if (count2 == 3) {
+                    return 0;
                 }
             }
         }
@@ -42,15 +49,24 @@ int main(void) {
     cpid = fork();
     if (cpid == 0) {
         while (1) {
-            int conut = 0xFFFFFF;
+            int conut = 0x10000;
             while (conut--) {
             }
             getpid();
+            sleep(1);
         }
     }
     
+    //size_t cur = brk(0);
+    //brk(cur + 128);
+    //brk(cur + 64);
+    //brk(cur - 64);
+    
+    
     while(1) {
-        
+        //  由于sleep的bug, 我们现在必须要先这样子
+        //  之后要设计开S态下的中断
+        waitpid(-1, NULL, 0x2, NULL);
     }
     return 0;
 }

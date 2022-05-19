@@ -11,6 +11,7 @@
 #include "hart.h"
 #include "types.h"
 #include "syscall.h"
+#include "time.h"
 
 extern void panic(char *s);
 
@@ -57,6 +58,11 @@ struct trap_regs * trap_handler(struct trap_regs * regs) {
 }
 
 void STIP_handler(struct trap_regs * regs) {
+    if (r_tp() == 0) {
+        time_tick();
+        time_ring_clock();
+    }
+    
     struct proc * myproc = my_hart()->myproc;
     if (myproc == NULL) {
         //  在我们现在的设计下,
@@ -65,6 +71,7 @@ void STIP_handler(struct trap_regs * regs) {
         //  (S态不开sstatus.SIE)
         //  而一个CPU只有拥有了进程才有可能进入用户态
         panic("NO PROC BUT STIP!");
+        return;
     }
     
     if (--myproc->remain_time == 0) {
@@ -89,7 +96,7 @@ void STIP_handler(struct trap_regs * regs) {
     } else {
         //  时间片用完的情况在proc_find_runnable_to_run
         //  重设了时间片
-        sbi_set_timer(DEFAULT_SBI_TIMER);
+        sbi_set_timer(DEFAULT_INTERVAL);
     }
 }
 

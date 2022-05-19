@@ -22,6 +22,13 @@
 #define SYS_umount  39
 #define SYS_mount   40
 
+#define SYS_brk 214
+#define SYS_uname 160
+#define SYS_times 153
+
+#define SYS_nanosleep 101
+#define SYS_gettimeofday 169
+
 void syscall_handler(struct trap_regs * regs, struct proc * proc);
 
 #endif /* syscall_h */

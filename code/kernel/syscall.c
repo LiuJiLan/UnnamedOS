@@ -17,6 +17,13 @@ extern void sys_getppid(struct proc * proc);
 //extern void sys_getpid(void);
 extern void sys_shed_yield(struct proc * proc);
 
+extern void sys_brk(struct proc * proc);
+extern void sys_uname(struct proc * proc);
+extern void sys_times(struct proc * proc);
+
+extern void sys_nanosleep(struct proc * proc);
+extern void sys_gettimeofday(struct proc * proc);
+
 void syscall_handler(struct trap_regs * regs, struct proc * proc) {
     regs_t sys_num = proc->context.a7;
     pid_t mypid = proc->pid;
@@ -63,6 +70,31 @@ void syscall_handler(struct trap_regs * regs, struct proc * proc) {
         case SYS_mount:
             proc->context.a0 = 0;
             proc->context.sepc += 4;
+            break;
+            
+        case SYS_brk:
+            panic("SYS_brk");
+            sys_brk(proc);
+            break;
+            
+        case SYS_uname:
+            panic("SYS_uname");
+            sys_uname(proc);
+            break;
+            
+        case SYS_times:
+            panic("SYS_times");
+            sys_times(proc);
+            break;
+            
+        case SYS_gettimeofday:
+            panic("SYS_gettimeofday");
+            sys_gettimeofday(proc);
+            break;
+            
+        case SYS_nanosleep:
+            panic("SYS_nanosleep");
+            sys_nanosleep(proc);
             break;
             
         default:

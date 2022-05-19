@@ -349,7 +349,7 @@ void proc_find_runnable_to_run(pid_t pid) {
                 vm_2_proc_upgtbl((p + i)->upgtbl);
                 
                 //  重制一下时间
-                sbi_set_timer(DEFAULT_SBI_TIMER);
+                sbi_set_timer(DEFAULT_INTERVAL);
                 
                 post_trap_handler(&regs);
             } else {
@@ -373,7 +373,7 @@ void proc_find_runnable_to_run(pid_t pid) {
                     my_hart()->myproc = (p + i);
                     proc_context_copyout(&regs, &(p + i)->context);
                     vm_2_proc_upgtbl((p + i)->upgtbl);
-                    sbi_set_timer(DEFAULT_SBI_TIMER);
+                    sbi_set_timer(DEFAULT_INTERVAL);
                     post_trap_handler(&regs);
                 } else {
                     release(&(p + i)->lock);

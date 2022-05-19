@@ -14,6 +14,8 @@ KERNEL_C = \
 	vm.c \
 	proc.c \
 	syscall.c \
+	temp.c \
+	time.c \
 	string.c \
 	
 KERNEL_PY = \

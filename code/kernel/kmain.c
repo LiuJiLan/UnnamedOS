@@ -12,6 +12,7 @@
 #include "vm.h"
 #include "proc.h"
 #include "trap.h"
+#include "time.h"
 
 
 void panic(char * s) {  //  用于GDB来debug
@@ -41,6 +42,7 @@ void kmain(void) {
         kvm_alloc_and_load();
         vm_2_kpgtbl();
         kinit2();
+        time_init();
         procinit();
         panic("HART 0 IS OK");
         
