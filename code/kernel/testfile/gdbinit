@@ -13,8 +13,8 @@ c
 b kmain
 #b trap_vector
 #在panic设断点, panic暂未实现, 用于debug
-#b panic
-b ringtest
+b panic
+#b ringtest
 #b time_ring_clock
 #display NNSEC_PER_MTI
 #display ktime

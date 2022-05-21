@@ -190,7 +190,7 @@ void sys_nanosleep(struct proc * proc) {
     //  (sys_nanosleep还没有睡眠这个进程, 就先被唤醒了,
     //  接着sys_nanosleep拿到了锁又睡眠了)
     
-    proc_find_runnable_to_run(mypid);
+    proc_reschedule(mypid);
 }
 
 void sys_gettimeofday(struct proc * proc) {

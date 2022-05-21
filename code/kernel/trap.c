@@ -63,21 +63,24 @@ void STIP_handler(struct trap_regs * regs) {
         time_ring_clock();
     }
     
-    struct proc * myproc = my_hart()->myproc;
+    struct proc * myproc = my_proc();
     if (myproc == NULL) {
-        //  在我们现在的设计下,
-        //  不应该出现一个CPU被STIP中断却没有拥有进程的情况
-        //  因为sstatus.SIE只有在用户态才会被置1
-        //  (S态不开sstatus.SIE)
-        //  而一个CPU只有拥有了进程才有可能进入用户态
-        panic("NO PROC BUT STIP!");
+        //  注意实际上我们应该用sstatus.SPP来作为判断依据
+        //  但是由于我们需要设备中断来初始化一些东西
+        //  我们之前的设计中myproc是不会在STIP中为NULL的
+        
+        regs_t x = r_sstatus();
+        if ((x & SSTATUS_SPP) == 0) {
+            panic("STIP with NULL proc in U-Mode.");
+        }
+        
+        
+        panic("STIP with NULL proc.");
         return;
     }
     
     if (--myproc->remain_time == 0) {
         //  时间片到
-        
-        vm_2_kpgtbl();
         
         //  注意, 此处我们没有上锁就修改了时间片,
         //  是因为时间片一旦被创建就是一个进程绝对私有的
@@ -85,14 +88,14 @@ void STIP_handler(struct trap_regs * regs) {
         proc_context_copyin(regs, &myproc->context);
         
         pid_t my_pid = myproc->pid;
-        my_hart()->myproc = NULL;
         
+        //  FOR DEBUG
         char str[12] = "time out:0;";
         str[9] += my_pid;
         panic(str);
         
         proc_timeout(my_pid);
-        proc_find_runnable_to_run(my_pid);
+        proc_reschedule(my_pid);
     } else {
         //  时间片用完的情况在proc_find_runnable_to_run
         //  重设了时间片
@@ -101,7 +104,7 @@ void STIP_handler(struct trap_regs * regs) {
 }
 
 void U_ECALL_handler(struct trap_regs * regs) {
-    struct proc * myproc = my_hart()->myproc;
+    struct proc * myproc = my_proc();
     pid_t mypid = myproc->pid;
     //  保存当前进程的context
     proc_context_copyin(regs, &myproc->context);

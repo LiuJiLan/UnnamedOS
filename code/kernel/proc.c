@@ -318,8 +318,8 @@ int proc_load_bin(pid_t pid, char* kva_start, size_t len) {
 void proc_init_trap_context(struct trap_regs * regs) {
     regs->tp = r_tp();
     regs_t sstatus = r_sstatus();
-    sstatus |= 0x1U << 5;    //  SPIE, 开中断
-    sstatus &= ~(0x1U << 8);    //  SPP = USER
+    sstatus |= SSTATUS_SPIE;    //  SPIE, 开中断
+    sstatus &= ~(SSTATUS_SPP);    //  SPP = USER
     regs->sstatus = sstatus;
 }
 
@@ -344,7 +344,7 @@ void proc_find_runnable_to_run(pid_t pid) {
                 release(&(p + i)->lock);
                 //  对单进程做完写操作就可以放锁了
                 
-                my_hart()->myproc = (p + i);
+                set_myproc(p + i);
                 proc_context_copyout(&regs, &(p + i)->context);
                 vm_2_proc_upgtbl((p + i)->upgtbl);
                 
@@ -370,7 +370,7 @@ void proc_find_runnable_to_run(pid_t pid) {
                 if ((p + i)->sched == SCHEDULABLE) {
                     (p + i)->sched = UNSCHEDULABLE;
                     release(&(p + i)->lock);
-                    my_hart()->myproc = (p + i);
+                    set_myproc(p + i);
                     proc_context_copyout(&regs, &(p + i)->context);
                     vm_2_proc_upgtbl((p + i)->upgtbl);
                     sbi_set_timer(DEFAULT_INTERVAL);
@@ -382,6 +382,15 @@ void proc_find_runnable_to_run(pid_t pid) {
             }
         }
     }
+}
+
+void proc_reschedule(pid_t pid) {
+    vm_2_kpgtbl();
+    set_myproc(NULL);
+    
+    intr_on();
+    
+    proc_find_runnable_to_run(pid);
 }
 
 //  注意不是fork系统调用
@@ -471,14 +480,11 @@ void proc_sleep_proc(pid_t pid) {
     acquire(&kproc.proctbl[pid].lock);
     release(&kproc.lock);
     
-    if (my_hart()->myproc->pid != pid) {
+    if (my_proc()->pid != pid) {
         kproc.proctbl[pid].state = INTERRUPTIBLE;
         release(&kproc.proctbl[pid].lock);
         
-        vm_2_kpgtbl();
-        my_hart()->myproc = NULL;
-        
-        proc_find_runnable_to_run(pid);
+        proc_reschedule(pid);
     }
     
     release(&kproc.proctbl[pid].lock);
@@ -493,7 +499,7 @@ void proc_wakeup_proc(pid_t pid) {
     acquire(&kproc.proctbl[pid].lock);
     release(&kproc.lock);
     
-    if (my_hart()->myproc->pid != pid) {
+    if (my_proc()->pid != pid) {
         kproc.proctbl[pid].state = RUNNING;
         kproc.proctbl[pid].sched = SCHEDULABLE;
     }
@@ -534,6 +540,7 @@ pid_t proc_find_usable_to_use(void) {
             continue;
         }
     }
+    return 0;
 }
 
  
@@ -635,10 +642,7 @@ void sys_wait4(struct proc * pproc) {
         pproc->state = INTERRUPTIBLE;
         release(&pproc->lock);
         
-        vm_2_kpgtbl();
-        my_hart()->myproc = NULL;
-        
-        proc_find_runnable_to_run(ppid);
+        proc_reschedule(ppid);
         //  特殊方式的转跳
     }
     
@@ -717,10 +721,7 @@ void sys_exit(struct proc * proc) {
     
     release(&pproc->lock);
     
-    vm_2_kpgtbl();
-    my_hart()->myproc = NULL;
-    
-    proc_find_runnable_to_run(pid);
+    proc_reschedule(pid);
 }
 
 void sys_getppid(struct proc * proc) {
@@ -748,8 +749,5 @@ void sys_shed_yield(struct proc * proc) {
     proc->sched = SCHEDULABLE;
     release(&proc->lock);
     
-    vm_2_kpgtbl();
-    my_hart()->myproc = NULL;
-    
-    proc_find_runnable_to_run(pid);
+    proc_reschedule(pid);
 }

@@ -7,7 +7,7 @@
 ## 注意事项
 
 1. 本文件由MarkDown编辑器软件自动排版, Raw Code会略显混乱, 使用相应软件或网站查看本文档以获得更好的体验。
-2. 本文件中可能会使用LaTeX格式的内联公式。使用集成了支持LaTeX格式的内联公式功能的Markdown编辑器或网站查看本文档以获得更好的体验。
+2. 本文件中可能会使用LaTeX格式的内联公式。使用集成了支持LaTeX格式的内联公式功能的Markdown编辑器或网站查看本文档以获得更好的体验。如果能看到$\LaTeX$而不是`$\LaTeX$`说明所用的工具支持这个功能。
 3. 本文件中可能会使用Mermaid渲染图片。使用集成了Mermaid渲染功能的Markdown编辑器或网站查看本文档以获得更好的体验。
 4. 本文件编辑时使用的主题是Typora的Github(浅色主题)与Night(深色主题)。如果使用Typora可以选择这两个主题以获得与作者相同的观看体验。
 
@@ -255,13 +255,7 @@ int sleep(unsigned long long time)
 
 #### nsec计算方法的选择
 
-在我一开始的设计中使用的是`NMTI_PER_NSEC`, 但是这样做有一个问题:
-
-在qemu当中,` MECHINE_FREQUENCY`也就是qemu模拟器的时钟频率是44100Hz(由[这里](https://www.qemu.org/docs/master/system/qemu-manpage.html)可知)。我设置的`DEFAULT_INTERVAL`为0x10000。由此可得`NMTI_PER_NSEC`取近似数的值是1。
-
-实际计算下来这个所谓的"一秒"被放大了1486077097.5056689倍。
-
-而一开始我设计来计算时间的代码是:
+在我一开始的设计中使用的是`NMTI_PER_NSEC`, 一开始我设计来计算时间的代码如下, 但是这样做有一个问题:
 
 ```c
 static struct {
@@ -289,7 +283,9 @@ void time_tick(void) {
 }
 ```
 
+在qemu当中,` MECHINE_FREQUENCY`也就是qemu模拟器的时钟频率是44100Hz(由[这里](https://www.qemu.org/docs/master/system/qemu-manpage.html)可知)。我设置的`DEFAULT_INTERVAL`为0x10000。由此可得`NMTI_PER_NSEC`取近似数的值是1。
 
+实际计算下来这个所谓的"一秒"被放大了1486077097.5056689倍。
 
 
 

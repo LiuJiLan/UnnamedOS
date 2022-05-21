@@ -117,6 +117,7 @@ void proc_context_copyin(struct trap_regs * regs, struct context * proc_context)
 void proc_context_copyout(struct trap_regs * regs, struct context * proc_context);
 
 void proc_find_runnable_to_run(pid_t pid);
+void proc_reschedule(pid_t pid);
 
 void proc_acquire_proctbl_lock(void);
 void proc_release_proctbl_lock(void);

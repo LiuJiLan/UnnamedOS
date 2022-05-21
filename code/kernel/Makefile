@@ -9,6 +9,7 @@ KERNEL_C = \
 	kmain.c \
 	trap.c \
 	hart.c \
+	intr.c \
 	spinlock.c \
 	kalloc.c \
 	vm.c \

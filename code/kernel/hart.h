@@ -29,6 +29,8 @@ extern struct hart harts[N_HART];
 
 void init_hart(void);
 struct hart * my_hart(void);
+struct proc * my_proc(void);
+void set_myproc(struct proc * p);
 
 
 #endif /* hart_h */

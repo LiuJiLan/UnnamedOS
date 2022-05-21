@@ -30,6 +30,7 @@ int main(void) {
                     sched_yield();
                 } else {
                     sleep(1);
+                    return 0;
                 }
                 if (count2 == 3) {
                     return 0;

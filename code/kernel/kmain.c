@@ -42,7 +42,9 @@ void kmain(void) {
         kvm_alloc_and_load();
         vm_2_kpgtbl();
         kinit2();
-        time_init();
+        time_init();    //  这个函数要求关中断
+        
+        
         procinit();
         panic("HART 0 IS OK");
         
@@ -58,6 +60,9 @@ void kmain(void) {
         panic("OTHER HART 0 IS OK");
     }
     
+    //  注意只有这个函数不需要被proc_reschedule包装
+    //  因为之前已经设置好了页表和hart的myproc为NULL
+    intr_on();
     proc_find_runnable_to_run(0);
 }
 

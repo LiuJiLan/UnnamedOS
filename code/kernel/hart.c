@@ -6,7 +6,9 @@
 //
 
 #include "hart.h"
+#include "types.h"
 #include "riscv.h"
+#include "intr.h"
 
 struct hart harts[N_HART];
 
@@ -24,4 +26,17 @@ struct hart * my_hart(void) {
     return harts + r_tp();
 }
 
+struct proc * my_proc(void) {
+    intr_push_off();
+    struct hart * mine = my_hart();
+    struct proc *p = mine->myproc;
+    intr_pop_off();
+    return p;
+}
 
+void set_myproc(struct proc * p) {
+    intr_push_off();
+    struct hart * mine = my_hart();
+    mine->myproc = p;
+    intr_pop_off();
+}
