@@ -25,6 +25,7 @@ typedef unsigned long       uptr_t;
 
 typedef unsigned long       regs_t;
 typedef unsigned long       size_t;
+typedef long                ssize_t;
 
 
 #define PGSIZE      4096

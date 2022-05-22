@@ -508,6 +508,56 @@ void proc_wakeup_proc(pid_t pid) {
 }
 //  不能放弃这个思路, 虽然之后一定能找到更好的解决方法
 
+//  学习了xv6的sleep
+//  需要传入一个自旋锁
+//  其设计是想要完成一个操作但不能及时的完成, 只能进入睡眠
+//  注意,
+//  1.锁不是造成睡眠的原因
+//  2.一个锁下面可能会有多个原因
+//  3.只能在这个函数中放自旋锁,
+//  因为要保证 拥锁-成果-放锁 和 拥锁-不满足、进程休眠-放锁 这两种动作的原子性
+void proc_sleep_for_reason(struct spinlock * lk, void * reason) {
+    struct proc * proc = my_proc();
+    
+    if (proc) {
+        acquire(&kproc.lock);
+        acquire(&proc->lock);
+        release(&kproc.lock);
+        
+        release(lk);
+        
+        proc->sleep_reason = reason;
+        proc->state = INTERRUPTIBLE;
+        pid_t mypid = proc->pid;
+        
+        acquire(&proc->lock);
+        
+        proc_reschedule(mypid);
+    } else {
+        release(lk);
+    }
+}
+
+void proc_wakeup_for_reason(void * reason) {
+    struct proc * p = &kproc.proctbl[0];
+    
+    acquire(&kproc.lock);
+    
+    for (int i = 0; i < NPROC; i++) {
+        if ((p + i) != my_proc()) {
+            acquire(&(p + i)->lock);
+            if ((p + i)->state == INTERRUPTIBLE && (p + i)->sleep_reason == reason) {
+                (p + i)->sleep_reason = NULL;
+                (p + i)->state = RUNNING;
+                (p + i)->sched = SCHEDULABLE;
+            }
+            release(&(p + i)->lock);
+        }
+    }
+    
+    release(&kproc.lock);
+}
+
 //  系统调用的时候可以反复使用
 void proc_handle_syscall(struct trap_regs * regs, pid_t pid) {
     //  如果是中断后重新运行的系统调用

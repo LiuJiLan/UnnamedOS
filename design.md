@@ -735,6 +735,104 @@ http://www.science.unitn.it/~fiorella/guidelinux/tlk/node102.html
 
 
 
+# IO缓存
+
+
+
+## 字符设备的FIFO
+
+之前在leetcode上写过LC_641. 设计循环双端队列, 这次直接拿[622. 设计循环队列](https://leetcode.cn/problems/design-circular-queue/)来改
+
+用国际站discuss中的[这个](https://leetcode.com/problems/design-circular-queue/discuss/1141876)的C++ Code w/ Array Modulo:
+
+```c++
+class MyCircularQueue {
+public:
+    MyCircularQueue(int k) {
+        data.resize(k);
+        maxSize = k;
+    }
+    bool enQueue(int val) {
+        if (isFull()) return false;
+        tail = (tail + 1) % maxSize;
+        data[tail] = val;
+        return true;
+    }
+    bool deQueue() {
+        if (isEmpty()) return false;
+        if (head == tail) head = 0, tail = -1;
+        else head = (head + 1) % maxSize;
+        return true;
+    }
+    int Front() {
+        return isEmpty() ? -1 : data[head];
+    }
+    int Rear() {
+        return isEmpty() ? -1 : data[tail];
+    }
+    bool isEmpty() {
+        return tail == -1;
+    }
+    bool isFull() {
+        return !isEmpty() && (tail + 1) % maxSize == head;
+    }
+private:
+    int maxSize, head = 0, tail = -1;
+    vector<int> data;
+};
+```
+
+
+
+```C
+#define N_CDEV_R_BUF    64
+
+char cdev_r_buf[N_CDEV_R_BUF];
+
+int isEmpty(void) {
+  return tail == -1;
+}
+
+int isFull(void) {
+  //	return !isEmpty() && (tail + 1) % maxSize == head;
+	return tail != -1 && (tail + 1) % N_CDEV_R_BUF == head;
+}
+
+int push(char val) {	//	push的同时返回是否成功
+  if (isFull()) {
+    return 0;
+  } 
+  tail = (tail + 1) % N_CDEV_R_BUF;
+  cdev_r_buf[tail] = val;
+  return 1;
+}
+
+int pop(void) {	//	只pop, 不会返回内容
+    if (isEmpty()) {
+      return 0;
+    }
+    if (head == tail) {
+      head = 0;
+      tail = -1;
+    } else {
+      head = (head + 1) % N_CDEV_R_BUF;
+    }
+    return 1;
+}
+
+char get(void) {	//	获取头部元素, 不会同时pop
+  if (isEmpty()) {
+    return -1;
+  } else {
+    return cdev_r_buf[head];
+  }
+}
+```
+
+
+
+
+
 # 代办事项
 
 - [ ] mount系统
@@ -746,4 +844,6 @@ http://www.science.unitn.it/~fiorella/guidelinux/tlk/node102.html
 - [ ] 时间的获取其实应该用RTC, 而不是现在使用的时钟中断
 - [ ] times系统调用没有实现
 - [ ] 检查所有的常量的尾部数据是否正确!!!
+- [ ] 测试用例中的printf每次只往输出口输出一个char, 我们的设计的cdev本身就可以输出多个(因为有缓存)
+- [ ] 更改所有的结构体简化一下(少些一点struct为了美观而已)
 

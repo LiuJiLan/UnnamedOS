@@ -15,14 +15,14 @@
 
 typedef int pid_t;
 
-enum proc_state {RUNNING, INTERRUPTIBLE, ZOMBIE};
+//  enum proc_state {RUNNING, INTERRUPTIBLE, ZOMBIE};
 //  暂时使用枚举来实现, 表示进程的状态, 暂时没有UNINTERRUPTIBLE
 //  ZOMBIE和DEAD的区分用其他来实现
 
-enum proc_sched {UNSCHEDULABLE, SCHEDULABLE};
+//  enum proc_sched {UNSCHEDULABLE, SCHEDULABLE};
 //  是否能被CPU调度, 只在CPU寻找所要的进程时使用
 
-enum proc_usable {UNUSABLE, USABLE};
+//  enum proc_usable {UNUSABLE, USABLE};
 //  只在新建进程的时候读并更改
 
 struct context {
@@ -72,9 +72,9 @@ struct context {
 //  在第一次读取和上锁后的第二次读之间, 不能确保其不被其他CPU更改
 //  所以一定不能使用寄存器中的值, 需要用volatile来确保
 struct proc {
-    volatile enum proc_state state;
-    volatile enum proc_sched sched;
-    volatile enum proc_usable usable;
+    volatile enum {RUNNING, INTERRUPTIBLE, ZOMBIE} state;
+    volatile enum {UNSCHEDULABLE, SCHEDULABLE} sched;
+    volatile enum {UNUSABLE, USABLE} usable;
     
     pid_t pid;              //  只是为了快速读取本进程的pid //#
     pid_t ppid;             //  父进程
@@ -98,6 +98,10 @@ struct proc {
     uptr_t PROC_STACK_TOP;   //  用户程序栈顶
     uptr_t PROC_STACK_PG;    //  用户栈起始位置(低地址)
     int PROC_STACK_SZ;      //  栈用了多少页, 我们暂时不设置这个值
+    
+    //  给proc_sleep_for_reason和proc_wakeup_for_reason函数使用的
+    //  注意例如exit中判断父进程的状态的时候不应该使用这个为依据
+    void * sleep_reason;
     
     struct spinlock lock;
 };
@@ -128,6 +132,8 @@ void proc_timeout(pid_t pid);
 
 void proc_sleep_proc(pid_t pid);
 void proc_wakeup_proc(pid_t pid);
+void proc_sleep_for_reason(struct spinlock * lk, void * reason);
+void proc_wakeup_for_reason(void * reason);
 
 void proc_handle_syscall(struct trap_regs * regs, pid_t pid);
 
