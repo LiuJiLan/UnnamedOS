@@ -14,7 +14,7 @@
 struct file {
     enum {REGULAR, DIRECTORY, SYMLINK, CDEV, BDEV, PIPE, SOCKET} type;
     int ref; //  reference count
-    volatile enum {UNUSABLE, USABLE} usable;
+    volatile enum {F_UNUSABLE, F_USABLE} usable;    //  和proc结构体里的冲突了
     struct spinlock lock;
 };
 

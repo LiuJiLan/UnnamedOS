@@ -9,6 +9,7 @@
 #include "memlayout.h"
 #include "types.h"
 #include "ccache.h"
+#include "proc.h"
 
 #define UART0_BASE 0x10000000UL
 #define UART0 P2V_WO(UART0_BASE)
@@ -131,6 +132,7 @@ int uart_getc(void) {
     }
 }
 
+extern char cdev_r_buf[];
 
 void uart_intr(void) {
     while (1) {
@@ -141,4 +143,5 @@ void uart_intr(void) {
             cdev_read_handle_intr((char)c);
         }
     }
+    proc_wakeup_for_reason(cdev_r_buf);
 }

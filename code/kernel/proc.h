@@ -12,6 +12,7 @@
 #include "vm.h"
 #include "spinlock.h"
 #include "trap.h"
+#include "file.h"
 
 typedef int pid_t;
 
@@ -60,6 +61,12 @@ struct context {
     unsigned long sepc; //  相当于保存了pc
 }__attribute__((packed));
 
+struct fde {    //  file descriptor entry
+    struct file * file;
+    enum {FDE_CLOSE = 0, FDE_OPEN} isOpened;
+    int flags;  //  open中的flags会被放入这里
+    //int modes;  //  open中的modes
+};
 
 //  与状态有关的必须都是volatile变量
 //  虽然除此之外的变量也有可能被多个CPU改变
@@ -102,6 +109,8 @@ struct proc {
     //  给proc_sleep_for_reason和proc_wakeup_for_reason函数使用的
     //  注意例如exit中判断父进程的状态的时候不应该使用这个为依据
     void * sleep_reason;
+    
+    struct fde fdtbl[NFD];
     
     struct spinlock lock;
 };
