@@ -16,10 +16,11 @@ int main(void) {
     getpid();
     getppid();
     
-    //char buf[10] = "abcdefghij";
+    char buf[10] = "abcdefghij";
     
-    //write(1, buf, 8);
+    write(1, buf, 8);
     
+    /*
     for (int i = 0; i < 3; i++) {
         cpid = fork();
         if (cpid == 0) {
@@ -42,6 +43,7 @@ int main(void) {
             }
         }
     }
+     */
     
     cpid = fork();
     if (cpid == 0) {

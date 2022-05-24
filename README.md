@@ -7,7 +7,7 @@
 ## 注意事项
 
 1. 本文件由MarkDown编辑器软件自动排版, Raw Code会略显混乱, 使用相应软件或网站查看本文档以获得更好的体验。
-2. 本文件中可能会使用LaTeX格式的内联公式。使用集成了支持LaTeX格式的内联公式功能的Markdown编辑器或网站查看本文档以获得更好的体验。如果能看到$x^x$而不是`$x^x$`说明所用的工具支持这个功能。
+2. 本文件中可能会使用LaTeX格式的内联公式。使用集成了支持LaTeX格式的内联公式功能的Markdown编辑器或网站查看本文档以获得更好的体验。如果能看到 $x^x$ 而不是`$x^x$`说明所用的工具支持这个功能。
 3. 本文件中可能会使用Mermaid渲染图片。使用集成了Mermaid渲染功能的Markdown编辑器或网站查看本文档以获得更好的体验。
 4. 本文件编辑时使用的主题是Typora的Github(浅色主题)与Night(深色主题)。如果使用Typora可以选择这两个主题以获得与作者相同的观看体验。
 
@@ -287,15 +287,42 @@ void time_tick(void) {
 
 实际计算下来这个所谓的"一秒"被放大了1486077097.5056689倍。
 
+> PS:
+>
+> 由[这里](https://www.qemu.org/docs/master/system/qemu-manpage.html)可知, qemu模拟器的时钟频率是44100Hz。**BUG: MECHINE_FREQUENCY太小时会有些离谱**
+
+所以改进的做法是: 提供两种度量时间的方法:
+
+```c
+void time_tick_frequency_major(void) {
+    //  频率很高
+    mti_cnt++;
+    if (mti_cnt != 0 && mti_cnt % NMTI_PER_NSEC == 0) {
+        mti_cnt -= NMTI_PER_NSEC;
+        
+        acquire(&ktime.lock);
+        ktime.nsec++;
+        if (ktime.nsec != 0 && ktime.nsec % POW_TEN_NINE == 0) {
+            ktime.nsec -= POW_TEN_NINE;
+            ktime.sec++;
+        }
+        release(&ktime.lock);
+    }
+}
+
+void time_tick_time_major(void) {
+    //  一次中断会度过多个nano second
+    acquire(&ktime.lock);
+    
+    ktime.nsec += NNSEC_PER_MTI;
+    ktime.sec += ktime.nsec / POW_TEN_NINE;
+    ktime.nsec %= POW_TEN_NINE;
+    
+    release(&ktime.lock);
+}
+```
 
 
-
-
-- PS:
-
-  由[这里](https://www.qemu.org/docs/master/system/qemu-manpage.html)可知, qemu模拟器的时钟频率是44100Hz。
-
-  **BUG: MECHINE_FREQUENCY太小时会有些离谱**
 
 
 

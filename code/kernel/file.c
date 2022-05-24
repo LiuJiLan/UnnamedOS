@@ -8,11 +8,15 @@
 #include "file.h"
 #include "ccache.h"
 
+extern void panic(char * s);
+
 void file_init(void) {
     initlock(&kftable.lock, "ftable");
     
     //  第一项定死是cdev
     kftable.filetbl[0].type = CDEV;
+    kftable.filetbl[0].ref = 1;
+    kftable.filetbl[0].usable = F_UNUSABLE;
     
 }
 
@@ -45,7 +49,7 @@ ssize_t file_read(struct file * f, struct proc * proc) {
         case CDEV:
             //  本来应该是有一个cdev的数组,
             //  我们暂时定死一个
-            return cdev_read(proc->upgtbl, proc->context.a2, proc->context.a3);
+            return cdev_read(proc->upgtbl, proc->context.a1, proc->context.a2);
             break;
             
         default:
@@ -59,7 +63,7 @@ ssize_t file_write(struct file * f, struct proc * proc) {
         case CDEV:
             //  本来应该是有一个cdev的数组,
             //  我们暂时定死一个
-            return cdev_write(proc->upgtbl, proc->context.a2, proc->context.a3);
+            return cdev_write(proc->upgtbl, proc->context.a1, proc->context.a2);
             break;
             
         default:

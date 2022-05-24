@@ -11,7 +11,6 @@
 #include "ccache.h"
 #include "proc.h"
 
-#define UART0_BASE 0x10000000UL
 #define UART0 P2V_WO(UART0_BASE)
 
 #define UART_REG(reg) ((volatile uint8 *)(UART0 + reg))

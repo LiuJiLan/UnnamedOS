@@ -10,6 +10,8 @@
 #include "spinlock.h"
 #include "file.h"
 
+extern void panic(char * s);
+
 void fd_init(struct fde * fdtbl) {
     //  其实不需要, 因为proc初始化的时候已经清空了
 }
@@ -36,7 +38,7 @@ void fd_clear(struct fde * fdtbl) {
 }
 
 void sys_read(struct proc * proc) {
-    int fd = (int)proc->context.a1;
+    int fd = (int)proc->context.a0;
     regs_t ret = 0;
     if (fd < 0 || fd >= NFD) {
         ret = -1;
@@ -54,7 +56,7 @@ void sys_read(struct proc * proc) {
 }
 
 void sys_write(struct proc * proc) {
-    int fd = (int)proc->context.a1;
+    int fd = (int)proc->context.a0;
     regs_t ret = 0;
     if (fd < 0 || fd >= NFD) {
         ret = -1;
@@ -63,7 +65,7 @@ void sys_write(struct proc * proc) {
     } else if (proc->fdtbl[fd].flags == O_RDONLY) {
         ret = -1;   //  读一个只读文件
     } else {
-        ret = file_read(proc->fdtbl[fd].file, proc);
+        ret = file_write(proc->fdtbl[fd].file, proc);
     }
     
     proc->context.a0 = ret;

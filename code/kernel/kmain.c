@@ -13,6 +13,9 @@
 #include "proc.h"
 #include "trap.h"
 #include "time.h"
+#include "file.h"
+#include "ccache.h"
+#include "uart.h"
 
 
 void panic(char * s) {  //  用于GDB来debug
@@ -42,9 +45,12 @@ void kmain(void) {
         kvm_alloc_and_load();
         vm_2_kpgtbl();
         kinit2();
+        
         time_init();    //  这个函数要求关中断
         
-        
+        file_init();
+        kvmmap(UART0_BASE, UART0_SIZE, PTE_R | PTE_W);
+        cdev_init();
         procinit();
         panic("HART 0 IS OK");
         
