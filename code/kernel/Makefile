@@ -14,9 +14,14 @@ KERNEL_C = \
 	kalloc.c \
 	vm.c \
 	proc.c \
+	fd.c \
+	sleeplock.c \
 	syscall.c \
 	temp.c \
+	file.c \
 	time.c \
+	ccache.c \
+	uart.c \
 	string.c \
 	
 KERNEL_PY = \

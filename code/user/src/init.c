@@ -16,6 +16,10 @@ int main(void) {
     getpid();
     getppid();
     
+    //char buf[10] = "abcdefghij";
+    
+    //write(1, buf, 8);
+    
     for (int i = 0; i < 3; i++) {
         cpid = fork();
         if (cpid == 0) {
@@ -67,7 +71,8 @@ int main(void) {
     while(1) {
         //  由于sleep的bug, 我们现在必须要先这样子
         //  之后要设计开S态下的中断
-        waitpid(-1, NULL, 0x1, NULL);
+        //waitpid(-1, NULL, 0x1, NULL);
+        wait(NULL);
     }
     return 0;
 }

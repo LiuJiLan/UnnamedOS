@@ -21,7 +21,6 @@ static uint64 NNSEC_PER_MTI;
 void (* time_tick)(void);
 
 static volatile uint64 mti_cnt;
-static volatile uint64 nano_cnt;
 
 struct sleep_entry{
     volatile enum {UNSET = 0, SET} is_set;
@@ -41,7 +40,6 @@ void time_init(void) {
     ktime.nsec = 0;
     ktime.sec = 0;
     mti_cnt = 0;
-    nano_cnt = 0;
     NMTI_PER_NSEC = MECHINE_FREQUENCY / (DEFAULT_INTERVAL * POW_TEN_NINE) + 1;
     NNSEC_PER_MTI = DEFAULT_INTERVAL * POW_TEN_NINE / MECHINE_FREQUENCY;
     
@@ -74,13 +72,11 @@ void time_tick_frequency_major(void) {
 
 void time_tick_time_major(void) {
     //  一次中断会度过多个nano second
-    nano_cnt += NNSEC_PER_MTI;
-    
     acquire(&ktime.lock);
     
-    ktime.sec += nano_cnt / POW_TEN_NINE;
-    nano_cnt %= POW_TEN_NINE;
-    ktime.nsec += nano_cnt;
+    ktime.nsec += NNSEC_PER_MTI;
+    ktime.sec += ktime.nsec / POW_TEN_NINE;
+    ktime.nsec %= POW_TEN_NINE;
     
     release(&ktime.lock);
 }
@@ -118,8 +114,6 @@ void time_set_clock(uint64 sec, uint64 nsec, pid_t pid) {
     release(&ktime.lock);
 }
 
-void ringtest(char * s) {};
-
 void time_ring_clock(void) {
     //  不用给ktime上锁, 因为这个只由hart0来维护
     //  调用这个函数时时钟一定不会滴答
@@ -135,7 +129,7 @@ void time_ring_clock(void) {
     acquire(&ksleep.lock);
     for (pid_t i = 0; i < NPROC; i++) {
         struct sleep_entry * q = p + i;//  预存防止每次都重复读取
-        if (q->is_set == SET && sec >= q->sec && nsec >= q->nsec) {
+        if (q->is_set == SET && (sec > q->sec || (sec == q->sec && nsec >= q->nsec) )) {
             //  注意判断顺序, 用&&的短路操作来实现比较
             q->is_set = UNSET;
             proc_wakeup_proc(i);
@@ -143,7 +137,6 @@ void time_ring_clock(void) {
             //  FOR DEBUG
             str[5] += i;
             panic(str);
-            ringtest(str);
             str[5] = '0';
         }
     }

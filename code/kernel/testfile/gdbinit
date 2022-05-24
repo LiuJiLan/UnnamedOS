@@ -18,6 +18,8 @@ b panic
 #b time_ring_clock
 #display NNSEC_PER_MTI
 #display ktime
+#display ksleep.sleeptbl
+#b time_set_clock
 c
 
 #b post_trap_handler
@@ -51,4 +53,7 @@ c
 
 display/z $sip
 display/z $scause
+display/z $sepc
+display/z $sp
+
 

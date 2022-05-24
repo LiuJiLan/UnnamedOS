@@ -12,7 +12,7 @@
 #include "vm.h"
 #include "spinlock.h"
 #include "trap.h"
-#include "file.h"
+#include "param.h"
 
 typedef int pid_t;
 

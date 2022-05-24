@@ -12,7 +12,7 @@
 #include "types.h"
 #include "spinlock.h"
 
-static struct {
+struct {
     volatile uint64 nsec;
     volatile uint64 sec;
     struct spinlock lock;

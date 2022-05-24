@@ -24,6 +24,9 @@ extern void sys_times(struct proc * proc);
 extern void sys_nanosleep(struct proc * proc);
 extern void sys_gettimeofday(struct proc * proc);
 
+extern void sys_read(struct proc * proc);
+extern void sys_write(struct proc * proc);
+
 void syscall_handler(struct trap_regs * regs, struct proc * proc) {
     regs_t sys_num = proc->context.a7;
     pid_t mypid = proc->pid;
@@ -95,6 +98,16 @@ void syscall_handler(struct trap_regs * regs, struct proc * proc) {
         case SYS_nanosleep:
             panic("SYS_nanosleep");
             sys_nanosleep(proc);
+            break;
+            
+        case SYS_read:
+            panic("SYS_read");
+            sys_read(proc);
+            break;
+            
+        case SYS_write:
+            panic("SYS_write");
+            sys_write(proc);
             break;
             
         default:

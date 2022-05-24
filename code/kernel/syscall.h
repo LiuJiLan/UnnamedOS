@@ -29,6 +29,9 @@
 #define SYS_nanosleep 101
 #define SYS_gettimeofday 169
 
+#define SYS_read 63
+#define SYS_write 64
+
 void syscall_handler(struct trap_regs * regs, struct proc * proc);
 
 #endif /* syscall_h */

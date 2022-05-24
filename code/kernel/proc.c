@@ -6,13 +6,14 @@
 //
 
 #include "proc.h"
-#include "param.h"
 #include "vm.h"
 #include "string.h"
 #include "kalloc.h"
 #include "hart.h"
 #include "riscv.h"
 #include "syscall.h"
+#include "fd.h"
+#include "file.h"
 
 extern void panic(char *s);
 
@@ -146,6 +147,21 @@ void procinit(void) {
     p->sched = SCHEDULABLE;
     p->usable = UNUSABLE;
     p->remain_time = DEFAULT_TIME;
+    
+    //  STDIN 0
+    p->fdtbl[0].isOpened = FDE_OPEN;
+    p->fdtbl[0].flags = O_RDONLY;
+    p->fdtbl[0].file = &kftable.filetbl[0];
+    
+    //  STDOUT 1
+    p->fdtbl[1].isOpened = FDE_OPEN;
+    p->fdtbl[1].flags = O_WRONLY;
+    p->fdtbl[1].file = &kftable.filetbl[0];
+    
+    //  STDERR 2
+    p->fdtbl[2].isOpened = FDE_OPEN;
+    p->fdtbl[2].flags = O_WRONLY;
+    p->fdtbl[2].file = &kftable.filetbl[0];
 }
 
 //  初始化一个进程
@@ -334,6 +350,7 @@ void proc_find_runnable_to_run(pid_t pid) {
     //  第一次循环
     for (int i = (pid + 1) % NPROC; i < NPROC; i++) {
         if ((p + i)->sched == SCHEDULABLE) {
+            intr_off();
             acquire(&kproc.lock);
             acquire(&(p + i)->lock);
             release(&kproc.lock);
@@ -354,6 +371,7 @@ void proc_find_runnable_to_run(pid_t pid) {
                 post_trap_handler(&regs);
             } else {
                 release(&(p + i)->lock);
+                intr_on();
                 continue;
             }
         }
@@ -364,6 +382,7 @@ void proc_find_runnable_to_run(pid_t pid) {
     while (1) {
         for (int i = 0; i < NPROC; i++) {
             if ((p + i)->sched == SCHEDULABLE) {
+                intr_off();
                 acquire(&kproc.lock);
                 acquire(&(p + i)->lock);
                 release(&kproc.lock);
@@ -377,6 +396,7 @@ void proc_find_runnable_to_run(pid_t pid) {
                     post_trap_handler(&regs);
                 } else {
                     release(&(p + i)->lock);
+                    intr_on();
                     continue;
                 }
             }
@@ -388,6 +408,14 @@ void proc_reschedule(pid_t pid) {
     vm_2_kpgtbl();
     set_myproc(NULL);
     
+    //  如果不在这里设置一个时钟中断,
+    //  intr_on()会被打断
+    //  然后在一次从S态陷入的STIP之后
+    //  sret返回之后两次ret时候,
+    //  ra会指向错误的位置(位于数据段中栈的位置)
+    //  一直找不出为什么会出错
+    //  只好避免intr_on()被打断
+    sbi_set_timer(DEFAULT_INTERVAL);
     intr_on();
     
     proc_find_runnable_to_run(pid);
@@ -438,6 +466,8 @@ int proc_fork(pid_t ppid, pid_t cpid) {
     
     cproc->state = RUNNING;
     cproc->sched = SCHEDULABLE;
+    
+    fd_fork(pproc->fdtbl, cproc->fdtbl);
     
     return 0;
 }
@@ -494,12 +524,23 @@ void proc_sleep_proc(pid_t pid) {
 //  如果wakeup的进程不是自己CPU的进程
 //  (由中断处理唤起的)变为RUNNABLE
 //  否则不改变
+//
+//  之前的设计中STIP发生只能是从U态下陷
+//  为了设备与时间管理, STIP也有可能发生在S态
+//  这个时候CPU可能没有拥有进程(myproc = NULL)
+//  例如正在寻找可用进程的CPU也能被时钟中断
+//  而时钟中断可能会调用time_ring_clock从而调用到本函数
+//  所以要加上对NULL的处理
 void proc_wakeup_proc(pid_t pid) {
     acquire(&kproc.lock);
     acquire(&kproc.proctbl[pid].lock);
     release(&kproc.lock);
     
-    if (my_proc()->pid != pid) {
+    struct proc * myproc = my_proc();
+    
+    if (!myproc || myproc->pid != pid) {
+        //  myproc == NULL || myproc->pid != pid
+        //  注意用短路来避免myproc为NULL时被访问
         kproc.proctbl[pid].state = RUNNING;
         kproc.proctbl[pid].sched = SCHEDULABLE;
     }
@@ -761,6 +802,7 @@ void sys_exit(struct proc * proc) {
     pproc->zombie_bitmap |= 0x1U << pid;
     
     proc->state = ZOMBIE;
+    fd_clear(proc->fdtbl);
     release(&proc->lock);   //  放自己的锁
     
     if (pproc->state == INTERRUPTIBLE && pproc->context.a7 == SYS_wait4) {

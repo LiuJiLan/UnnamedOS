@@ -21,6 +21,16 @@ void U_ECALL_handler(struct trap_regs * regs);
 struct trap_regs * trap_handler(struct trap_regs * regs) {
     regs_t scause = regs->scause;
     
+    /*
+     // FOR DEBUG
+    regs_t x = r_sstatus();
+    if (x & SSTATUS_SPP) {
+        panic("TRAP FROM S.");
+    } else {
+        panic("TRAP FROM U.");
+    }
+     */
+    
     if (scause & (0x1UL << 63)) {   //  中断
         scause &= ~(1UL << 63);
         switch (scause) {
@@ -71,12 +81,20 @@ void STIP_handler(struct trap_regs * regs) {
         
         regs_t x = r_sstatus();
         if ((x & SSTATUS_SPP) == 0) {
+            //  如果发生就是真的PANIC
+            panic("REAL PANIC!!!");
             panic("STIP with NULL proc in U-Mode.");
         }
         
-        
-        panic("STIP with NULL proc.");
+        panic("STIP NULL proc S-Mode.");
+        sbi_set_timer(DEFAULT_INTERVAL);
         return;
+    }
+    
+    regs_t x = r_sstatus();
+    if (x & SSTATUS_SPP) {
+        panic("REAL PANIC!!!");
+        panic("STIP with A proc in S-Mode.");
     }
     
     if (--myproc->remain_time == 0) {

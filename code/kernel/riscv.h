@@ -65,17 +65,17 @@ static inline void sbi_set_timer(uint64 stime_value) {
 }
 
 // enable device interrupts
-static inline void intr_on() {
+static inline void intr_on(void) {
   w_sstatus(r_sstatus() | SSTATUS_SIE);
 }
 
 // disable device interrupts
-static inline void intr_off() {
+static inline void intr_off(void) {
   w_sstatus(r_sstatus() & ~SSTATUS_SIE);
 }
 
-// are device interrupts enabled?
-static inline int intr_get() {
+// are device interrupts enableind?
+static inline int intr_get(void) {
   uint64 x = r_sstatus();
   return (x & SSTATUS_SIE) != 0;
 }
