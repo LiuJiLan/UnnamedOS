@@ -12,11 +12,13 @@
 #include "param.h"
 #include "types.h"
 #include "proc.h"
+#include "pipe.h"
 
 struct file {
     enum {REGULAR, DIRECTORY, SYMLINK, CDEV, BDEV, PIPE, SOCKET} type;
     int ref; //  reference count
     volatile enum {F_USABLE = 0, F_UNUSABLE} usable;    //  和proc结构体里的冲突了
+    struct pipe * pipe_p;
     //  struct spinlock lock;   //  其实不需要每个表项都要一个自旋锁
 };
 

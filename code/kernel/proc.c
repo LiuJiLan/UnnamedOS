@@ -162,6 +162,18 @@ void procinit(void) {
     p->fdtbl[2].isOpened = FDE_OPEN;
     p->fdtbl[2].flags = O_WRONLY;
     p->fdtbl[2].file = &kftable.filetbl[0];
+    
+    //  BUG!!!!!!!!!
+    //  先定死3和4用于管道, pipe2系统调用也是用这个
+    //  管道读出端
+    p->fdtbl[3].isOpened = FDE_OPEN;
+    p->fdtbl[3].flags = O_RDONLY;
+    p->fdtbl[3].file = &kftable.filetbl[1];
+    
+    //  管道的写入端
+    p->fdtbl[4].isOpened = FDE_OPEN;
+    p->fdtbl[4].flags = O_WRONLY;
+    p->fdtbl[4].file = &kftable.filetbl[1];
 }
 
 //  初始化一个进程

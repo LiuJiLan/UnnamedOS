@@ -12,6 +12,7 @@ c
 
 b kmain
 #b trap_vector
+#b trap_exit
 #在panic设断点, panic暂未实现, 用于debug
 b panic
 #b ringtest
@@ -51,7 +52,8 @@ c
 #display/z $medeleg
 #display/z $mideleg
 
-display/z $sip
+#display/z $sip
+display/z $sstatus
 display/z $scause
 display/z $sepc
 display/z $sp

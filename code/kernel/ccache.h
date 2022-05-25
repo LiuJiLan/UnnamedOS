@@ -13,7 +13,6 @@
 
 #include "types.h"
 #include "vm.h"
-#include "proc.h"
 
 void cdev_init(void);
 ssize_t cdev_write(pgtbl_t upgtbl, uptr_t uva, size_t count);

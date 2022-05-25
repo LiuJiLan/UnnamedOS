@@ -22,6 +22,7 @@ KERNEL_C = \
 	time.c \
 	ccache.c \
 	uart.c \
+	pipe.c \
 	string.c \
 	
 KERNEL_PY = \

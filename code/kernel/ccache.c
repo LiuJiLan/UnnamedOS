@@ -99,7 +99,7 @@ ssize_t cdev_write(pgtbl_t upgtbl, uptr_t uva, size_t count) {
     
     char ch = 0;
     int ret = 0;    //  接受传输是否正确的返回值
-    while (cnt--) {   //  是unsigned, 不用担心传进来的是负数
+    while (count--) {   //  是unsigned, 不用担心传进来的是负数
         ret = vm_memmove(upgtbl, (uptr_t)&ch, uva, 1, 1);
         if (ret == -1) {
             return -1;
@@ -110,7 +110,7 @@ ssize_t cdev_write(pgtbl_t upgtbl, uptr_t uva, size_t count) {
     
     releasesleep(&cdev_w_lock);
     
-    return count;
+    return cnt;
 }
 
 //  注意, 如果缓存为空则等待中断后重新调度

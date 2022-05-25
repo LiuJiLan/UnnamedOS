@@ -9,6 +9,8 @@
 #include "param.h"
 #include "spinlock.h"
 #include "file.h"
+#include "vm.h"
+#include "types.h"
 
 extern void panic(char * s);
 
@@ -36,6 +38,17 @@ void fd_clear(struct fde * fdtbl) {
             file_decrease(fl);
         }
     }
+}
+
+//  没找到返回-1
+int fd_find_usable_to_use(struct fde * fdtbl) {
+    for (int i = 0; i < NFD; i++) {
+        if (fdtbl[i].isOpened == FDE_CLOSE) {
+            fdtbl[i].isOpened = FDE_OPEN;
+            return i;
+        }
+    }
+    return -1;
 }
 
 void sys_read(struct proc * proc) {
@@ -88,6 +101,75 @@ void sys_close(struct proc * proc) {
         file_decrease(fdtbl[fd].file);
         fdtbl[fd].isOpened = FDE_CLOSE;
         ret = 0;
+    }
+    
+    proc->context.a0 = ret;
+    proc->context.sepc += 4;
+    return;
+}
+
+void sys_pipe2(struct proc * proc) {
+    //  BUG!!!
+    //  临时实现!!!!!
+    //  定死返回3和4, 在proc装载init进程的时候完成
+    int ret[2] = {3, 4};
+    vm_memmove(proc->upgtbl, (uptr_t)ret, proc->context.a0, sizeof(int) * 2, 0);
+    
+    proc->context.a0 = 0;   //  一定成功
+    proc->context.sepc += 4;
+    return;
+}
+
+void sys_dup(struct proc * proc) {
+    int fd = (int)proc->context.a0;
+    regs_t ret = 0;
+    struct fde * fdtbl = proc->fdtbl;
+    
+    if (fd < 0 || fd >= NFD) {
+        ret = -1;
+    } else {
+        int new = fd_find_usable_to_use(proc->fdtbl);
+        if (new == -1) {
+            ret = -1;
+        } else {
+            struct file * fl = fdtbl[fd].file;
+            if (!fl) {
+                if (fl->usable == F_UNUSABLE) {
+                    file_increase(fl);
+                }
+            }
+            fdtbl[new] = fdtbl[fd];
+            ret = new;
+        }
+    }
+    
+    proc->context.a0 = ret;
+    proc->context.sepc += 4;
+    return;
+}
+
+
+void sys_dup3(struct proc * proc) {
+    //  BUG!!!
+    //  忽略了flags
+    int old_fd = (int)proc->context.a0;
+    int new_fd = (int)proc->context.a1;
+    regs_t ret = 0;
+    struct fde * fdtbl = proc->fdtbl;
+    
+    if (old_fd < 0 || old_fd >= NFD || new_fd < 0 || new_fd >= NFD) {
+        ret = -1;
+    } else if (new_fd == old_fd) {
+        ret = new_fd;
+    } else {
+        struct file * fl = fdtbl[new_fd].file;
+        if (!fl) {
+            if (fl->usable == F_UNUSABLE) {
+                file_decrease(fl);
+            }
+        }
+        fdtbl[new_fd] = fdtbl[old_fd];
+        ret = new_fd;
     }
     
     proc->context.a0 = ret;

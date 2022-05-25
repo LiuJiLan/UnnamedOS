@@ -29,7 +29,10 @@
 #define SYS_nanosleep 101
 #define SYS_gettimeofday 169
 
+#define SYS_dup 23
+#define SYS_dup3 24
 #define SYS_close 57
+#define SYS_pipe2 59
 #define SYS_read 63
 #define SYS_write 64
 

@@ -24,7 +24,10 @@ extern void sys_times(struct proc * proc);
 extern void sys_nanosleep(struct proc * proc);
 extern void sys_gettimeofday(struct proc * proc);
 
+extern void sys_dup(struct proc * proc);
+extern void sys_dup3(struct proc * proc);
 extern void sys_close(struct proc * proc);
+extern void sys_pipe2(struct proc * proc);
 extern void sys_read(struct proc * proc);
 extern void sys_write(struct proc * proc);
 
@@ -101,9 +104,24 @@ void syscall_handler(struct trap_regs * regs, struct proc * proc) {
             sys_nanosleep(proc);
             break;
             
+        case SYS_dup:
+            panic("SYS_dup");
+            sys_dup(proc);
+            break;
+            
+        case SYS_dup3:
+            panic("SYS_dup3");
+            sys_dup3(proc);
+            break;
+            
         case SYS_close:
             panic("SYS_close");
             sys_close(proc);
+            break;
+            
+        case SYS_pipe2:
+            panic("SYS_pipe2");
+            sys_pipe2(proc);
             break;
             
         case SYS_read:

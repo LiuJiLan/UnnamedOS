@@ -865,7 +865,7 @@ type get(void) {	//	获取头部元素, 不会同时pop
 
 - [ ] proc中的p+i可以改成p[i], 但不改也行, 因为之后会想改成链表的动态分配
 
-- [ ] 有些时候会有BUG, 严重怀疑是中断处理的问题 (可能表现为访问了错误的指针, 也可能是试图执行错误的指令, 后者引发的本质也是栈中的数据被破坏导致ret指令返回依据ra寄存器值异常)
+- [ ] 有些时候会有BUG, 严重怀疑是中断处理的问题 (可能表现为访问了错误的指针, 也可能是试图执行错误的指令, 后者引发的本质也是栈中的数据被破坏导致ret指令返回依据ra寄存器值异常) [ 提高了栈大小后解决 ]
 
   ```shell
   # 反汇编内容
@@ -895,6 +895,20 @@ type get(void) {	//	获取头部元素, 不会同时pop
   1: /z $sip = 0x0000000000000000
   2: /z $scause = 0x000000000000000d
   3: /z $sepc = 0xffffffffc02058c0
+  
+  proc_find_runnable_to_run (pid=3) at proc.c:396
+  396	            if ((p + i)->sched == SCHEDULABLE) {
+  => 0xffffffffc0205906 <proc_find_runnable_to_run+424>:	dc 43	lw	a5,4(a5)
+     0xffffffffc0205908 <proc_find_runnable_to_run+426>:	81 27	sext.w	a5,a5
+  1: /z $sip = 0x0000000000000000
+  2: /z $scause = 0x000000000000000d
+  3: /z $sepc = 0xffffffffc0205906
+  4: /z $sp = 0xffffffffc020b470
+  (gdb) display i
+  5: i = 262432
+  (gdb) display p
+  6: p = (struct proc *) 0xffffffffc020f080 <kproc+24>
+  
   ```
 
   
