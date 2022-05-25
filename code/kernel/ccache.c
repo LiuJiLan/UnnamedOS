@@ -10,6 +10,8 @@
 #include "uart.h"
 #include "proc.h"
 
+extern void panic(char * s);
+
 #define N_CDEV_W_BUF    8
 #define N_CDEV_R_BUF    64
 

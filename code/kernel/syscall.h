@@ -29,6 +29,7 @@
 #define SYS_nanosleep 101
 #define SYS_gettimeofday 169
 
+#define SYS_close 57
 #define SYS_read 63
 #define SYS_write 64
 

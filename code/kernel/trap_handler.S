@@ -171,4 +171,5 @@ trap_exit:
 
     TRAP_RESTORE_A0_T0
 
+SRET:
     sret

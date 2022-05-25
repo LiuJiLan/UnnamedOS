@@ -15,7 +15,10 @@ void file_init(void) {
     
     //  第一项定死是cdev
     kftable.filetbl[0].type = CDEV;
-    kftable.filetbl[0].ref = 1;
+    //  BUG!!!
+    //  我们暂时用文件的FLAGS位来保证同一个cdev的读写之分
+    //  我们一开始把init进程STDIN、STDOUT、STDERR都指向了这个CDEV
+    kftable.filetbl[0].ref = 3;
     kftable.filetbl[0].usable = F_UNUSABLE;
     
 }
@@ -28,7 +31,6 @@ void file_increase(struct file * f) {
 
 void file_decrease(struct file * f) {
     acquire(&kftable.lock);
-    f->ref--;
     if (--f->ref == 0) {
         f->usable = F_USABLE;
     }

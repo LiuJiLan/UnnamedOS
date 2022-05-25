@@ -558,20 +558,20 @@ void proc_wakeup_proc(pid_t pid) {
 //  3.只能在这个函数中放自旋锁,
 //  因为要保证 拥锁-成果-放锁 和 拥锁-不满足、进程休眠-放锁 这两种动作的原子性
 void proc_sleep_for_reason(struct spinlock * lk, void * reason) {
-    struct proc * proc = my_proc();
+    struct proc * myproc = my_proc();
     
-    if (proc) {
+    if (myproc) {
         acquire(&kproc.lock);
-        acquire(&proc->lock);
+        acquire(&myproc->lock);
         release(&kproc.lock);
         
         release(lk);
         
-        proc->sleep_reason = reason;
-        proc->state = INTERRUPTIBLE;
-        pid_t mypid = proc->pid;
+        myproc->sleep_reason = reason;
+        myproc->state = INTERRUPTIBLE;
+        pid_t mypid = myproc->pid;
         
-        acquire(&proc->lock);
+        release(&myproc->lock);
         
         proc_reschedule(mypid);
     } else {
@@ -584,13 +584,21 @@ void proc_wakeup_for_reason(void * reason) {
     
     acquire(&kproc.lock);
     
+    //  FOR DEBUG
+    char str[30] = "0_proc_wakeup_for_reason";
+    
+    struct proc * myproc = my_proc();
     for (int i = 0; i < NPROC; i++) {
-        if ((p + i) != my_proc()) {
+        if ((p + i) != myproc) {
             acquire(&(p + i)->lock);
             if ((p + i)->state == INTERRUPTIBLE && (p + i)->sleep_reason == reason) {
                 (p + i)->sleep_reason = NULL;
                 (p + i)->state = RUNNING;
                 (p + i)->sched = SCHEDULABLE;
+                
+                //  FOR DEBUG
+                str[0] = '0' + (p + i)->pid;
+                panic(str);
             }
             release(&(p + i)->lock);
         }

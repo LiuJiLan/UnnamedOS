@@ -785,9 +785,17 @@ private:
 
 
 ```C
-#define N_CDEV_R_BUF    64
+#define N 64
+typedef char type
 
-char cdev_r_buf[N_CDEV_R_BUF];
+type data[N];
+int head;
+int tail;
+
+void init(void) {
+  head = 0;
+  tail = -1;
+}
 
 int isEmpty(void) {
   return tail == -1;
@@ -795,15 +803,15 @@ int isEmpty(void) {
 
 int isFull(void) {
   //	return !isEmpty() && (tail + 1) % maxSize == head;
-	return tail != -1 && (tail + 1) % N_CDEV_R_BUF == head;
+	return tail != -1 && (tail + 1) % N == head;
 }
 
-int push(char val) {	//	push的同时返回是否成功
+int push(type val) {	//	push的同时返回是否成功
   if (isFull()) {
     return 0;
   } 
-  tail = (tail + 1) % N_CDEV_R_BUF;
-  cdev_r_buf[tail] = val;
+  tail = (tail + 1) % N;
+  data[tail] = val;
   return 1;
 }
 
@@ -815,16 +823,16 @@ int pop(void) {	//	只pop, 不会返回内容
       head = 0;
       tail = -1;
     } else {
-      head = (head + 1) % N_CDEV_R_BUF;
+      head = (head + 1) % N;
     }
     return 1;
 }
 
-char get(void) {	//	获取头部元素, 不会同时pop
+type get(void) {	//	获取头部元素, 不会同时pop
   if (isEmpty()) {
     return -1;
   } else {
-    return cdev_r_buf[head];
+    return data[head];
   }
 }
 ```
@@ -834,15 +842,62 @@ char get(void) {	//	获取头部元素, 不会同时pop
 # 代办事项
 
 - [ ] mount系统
+
 - [ ] brk修改成标准, 比赛中的brk(0)其实是oldbrk可以从mm_struct的 brk成分中获取, [这里](https://blog.csdn.net/sykpour/article/details/25155869)
+
 - [ ] brk中申请增加时, <=的设计是否正确
+
 - [ ] 把user部分Makefile和文件组成写简洁点, 起码能让Xcode认出来
+
 - [ ] brk中增加时只默认增加了一个页, 缩小的时候没有回收,  这是BUG
+
 - [ ] 比赛要求的nanosleep的结构体和Linux中的结构体不一样
+
 - [ ] 时间的获取其实应该用RTC, 而不是现在使用的时钟中断
+
 - [ ] times系统调用没有实现
+
 - [ ] 检查所有的常量的尾部数据是否正确!!!
+
 - [ ] 测试用例中的printf每次只往输出口输出一个char, 我们的设计的cdev本身就可以输出多个(因为有缓存)
+
 - [ ] 更改所有的结构体简化一下(少些一点struct为了美观而已)
+
 - [ ] proc中的p+i可以改成p[i], 但不改也行, 因为之后会想改成链表的动态分配
+
+- [ ] 有些时候会有BUG, 严重怀疑是中断处理的问题 (可能表现为访问了错误的指针, 也可能是试图执行错误的指令, 后者引发的本质也是栈中的数据被破坏导致ret指令返回依据ra寄存器值异常)
+
+  ```shell
+  # 反汇编内容
+      while (1) {
+          for (int i = 0; i < NPROC; i++) {
+  ffffffffc02058a8:	fe042423          	sw	zero,-24(s0)
+  ffffffffc02058ac:	aa35                	j	ffffffffc02059e8 <proc_find_runnable_to_run+0x2d0>
+              if ((p + i)->sched == SCHEDULABLE) {
+  ffffffffc02058ae:	fe842703          	lw	a4,-24(s0)
+  ffffffffc02058b2:	29000793          	li	a5,656
+  ffffffffc02058b6:	02f707b3          	mul	a5,a4,a5
+  ffffffffc02058ba:	fe043703          	ld	a4,-32(s0)
+  ffffffffc02058be:	97ba                	add	a5,a5,a4
+  ffffffffc02058c0:	43dc                	lw	a5,4(a5)
+  ffffffffc02058c2:	2781                	sext.w	a5,a5
+  ffffffffc02058c4:	873e                	mv	a4,a5
+  ffffffffc02058c6:	4785                	li	a5,1
+  ffffffffc02058c8:	10f71b63          	bne	a4,a5,ffffffffc02059de <proc_find_runnable_to_run+0x2c6>
+  
+  # GDB内容
+  Thread 1 hit Breakpoint 3, panic (s=0xffffffffc0209038 "S MODE Exception!") at kmain.c:22
+  22	}
+  => 0xffffffffc02000fc <panic+10>:	01 00	nop
+     0xffffffffc02000fe <panic+12>:	62 64	ld	s0,24(sp)
+     0xffffffffc0200100 <panic+14>:	05 61	addi	sp,sp,32
+     0xffffffffc0200102 <panic+16>:	82 80	ret
+  1: /z $sip = 0x0000000000000000
+  2: /z $scause = 0x000000000000000d
+  3: /z $sepc = 0xffffffffc02058c0
+  ```
+
+  
+
+- [ ] b
 

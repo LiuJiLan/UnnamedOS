@@ -16,9 +16,8 @@ int main(void) {
     getpid();
     getppid();
     
-    char buf[10] = "abcdefghij";
+    char buf[30] = "abcdeabcdeabcdeabcdeabcdeabcde";
     
-    write(1, buf, 8);
     
     /*
     for (int i = 0; i < 3; i++) {
@@ -33,8 +32,9 @@ int main(void) {
                 getpid();
                 if (i == 2) {
                     sched_yield();
+                    //write(1, buf, 30);
                 } else {
-                    sleep(1);
+                    //sleep(1);
                     return 0;
                 }
                 if (count2 == 3) {
@@ -43,13 +43,16 @@ int main(void) {
             }
         }
     }
-     */
+    */
     
     cpid = fork();
     if (cpid == 0) {
         getpid();
+        int ret = close(2);
+        printf("close:%d", ret);
         return 0;
     } else {
+        printf("CHILD:%d\n", cpid);
         waitpid(cpid, NULL, 0, NULL);
     }
     
@@ -60,7 +63,7 @@ int main(void) {
             while (conut--) {
             }
             getpid();
-            sleep(1);
+            //sleep(1);
         }
     }
     

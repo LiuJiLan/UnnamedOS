@@ -24,6 +24,7 @@ extern void sys_times(struct proc * proc);
 extern void sys_nanosleep(struct proc * proc);
 extern void sys_gettimeofday(struct proc * proc);
 
+extern void sys_close(struct proc * proc);
 extern void sys_read(struct proc * proc);
 extern void sys_write(struct proc * proc);
 
@@ -31,7 +32,7 @@ void syscall_handler(struct trap_regs * regs, struct proc * proc) {
     regs_t sys_num = proc->context.a7;
     pid_t mypid = proc->pid;
     
-    char str[12] = "getpid:0;";  //  FOR DEBUG
+    //  char str[12] = "getpid:0;";  //  FOR DEBUG
     
     //  BUG, 几个用pid为参数的进程可以改用proc指针
     //  这里的传参安排肯定是有问题的
@@ -53,13 +54,13 @@ void syscall_handler(struct trap_regs * regs, struct proc * proc) {
             break;
             
         case SYS_getppid:
-            panic("SYS_getppid");
+            //panic("SYS_getppid");
             sys_getppid(proc);
             break;
             
         case SYS_getpid:
-            str[7] += mypid;    //  FOR DEBUG
-            panic(str);         //  FOR DEBUG
+            //str[7] += mypid;    //  FOR DEBUG
+            //panic(str);         //  FOR DEBUG
             proc->context.a0 = mypid;
             proc->context.sepc += 4;
             break;
@@ -98,6 +99,11 @@ void syscall_handler(struct trap_regs * regs, struct proc * proc) {
         case SYS_nanosleep:
             panic("SYS_nanosleep");
             sys_nanosleep(proc);
+            break;
+            
+        case SYS_close:
+            panic("SYS_close");
+            sys_close(proc);
             break;
             
         case SYS_read:

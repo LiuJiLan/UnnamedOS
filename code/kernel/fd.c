@@ -31,6 +31,7 @@ void fd_clear(struct fde * fdtbl) {
     struct file * fl = NULL;
     for (int i = 0; i < NFD; i++) {
         if (fdtbl[i].isOpened == FDE_OPEN) {
+            fdtbl[i].isOpened = FDE_CLOSE;
             fl = fdtbl[i].file;
             file_decrease(fl);
         }
@@ -40,14 +41,15 @@ void fd_clear(struct fde * fdtbl) {
 void sys_read(struct proc * proc) {
     int fd = (int)proc->context.a0;
     regs_t ret = 0;
+    struct fde * fdtbl = proc->fdtbl;
     if (fd < 0 || fd >= NFD) {
         ret = -1;
-    } else if (proc->fdtbl[fd].isOpened == FDE_CLOSE) {
+    } else if (fdtbl[fd].isOpened == FDE_CLOSE) {
         ret = -1;
-    } else if (proc->fdtbl[fd].flags & O_WRONLY) {
+    } else if (fdtbl[fd].flags & O_WRONLY) {
         ret = -1;   //  读一个只写文件
     } else {
-        ret = file_read(proc->fdtbl[fd].file, proc);
+        ret = file_read(fdtbl[fd].file, proc);
     }
     
     proc->context.a0 = ret;
@@ -58,14 +60,34 @@ void sys_read(struct proc * proc) {
 void sys_write(struct proc * proc) {
     int fd = (int)proc->context.a0;
     regs_t ret = 0;
+    struct fde * fdtbl = proc->fdtbl;
     if (fd < 0 || fd >= NFD) {
         ret = -1;
-    } else if (proc->fdtbl[fd].isOpened == FDE_CLOSE) {
+    } else if (fdtbl[fd].isOpened == FDE_CLOSE) {
         ret = -1;
-    } else if (proc->fdtbl[fd].flags == O_RDONLY) {
+    } else if (fdtbl[fd].flags == O_RDONLY) {
         ret = -1;   //  读一个只读文件
     } else {
-        ret = file_write(proc->fdtbl[fd].file, proc);
+        ret = file_write(fdtbl[fd].file, proc);
+    }
+    
+    proc->context.a0 = ret;
+    proc->context.sepc += 4;
+    return;
+}
+
+void sys_close(struct proc * proc) {
+    int fd = (int)proc->context.a0;
+    regs_t ret = 0;
+    struct fde * fdtbl = proc->fdtbl;
+    if (fd < 0 || fd >= NFD) {
+        ret = -1;
+    } else if (fdtbl[fd].isOpened == FDE_CLOSE) {
+        ret = -1;
+    } else {
+        file_decrease(fdtbl[fd].file);
+        fdtbl[fd].isOpened = FDE_CLOSE;
+        ret = 0;
     }
     
     proc->context.a0 = ret;
