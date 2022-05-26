@@ -427,7 +427,11 @@ void proc_reschedule(pid_t pid) {
     //  ra会指向错误的位置(位于数据段中栈的位置)
     //  一直找不出为什么会出错
     //  只好避免intr_on()被打断
-    sbi_set_timer(DEFAULT_INTERVAL);
+    //
+    //  现在有怀疑是栈超了
+    //sbi_set_timer(DEFAULT_INTERVAL);
+    //
+    //  现在有怀疑是其他的部分
     intr_on();
     
     proc_find_runnable_to_run(pid);

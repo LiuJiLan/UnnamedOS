@@ -12,10 +12,13 @@
 #include "types.h"
 #include "syscall.h"
 #include "time.h"
+#include "plic.h"
+#include "uart.h"
 
 extern void panic(char *s);
 
 void STIP_handler(struct trap_regs * regs);
+void SEIP_handler(struct trap_regs * regs);
 void U_ECALL_handler(struct trap_regs * regs);
 
 struct trap_regs * trap_handler(struct trap_regs * regs) {
@@ -23,12 +26,12 @@ struct trap_regs * trap_handler(struct trap_regs * regs) {
     
     /*
      // FOR DEBUG
-    regs_t x = r_sstatus();
-    if (x & SSTATUS_SPP) {
-        panic("TRAP FROM S.");
-    } else {
-        panic("TRAP FROM U.");
-    }
+     regs_t x = r_sstatus();
+     if (x & SSTATUS_SPP) {
+     panic("TRAP FROM S.");
+     } else {
+     panic("TRAP FROM U.");
+     }
      */
     
     if (scause & (0x1UL << 63)) {   //  中断
@@ -45,6 +48,8 @@ struct trap_regs * trap_handler(struct trap_regs * regs) {
                 
             case Supervisor_External_Interrupt:
                 panic("SEIP");
+                SEIP_handler(regs);
+                panic("SEIP_finish");
                 break;
                 
             default:
@@ -118,6 +123,24 @@ void STIP_handler(struct trap_regs * regs) {
         //  时间片用完的情况在proc_find_runnable_to_run
         //  重设了时间片
         sbi_set_timer(DEFAULT_INTERVAL);
+    }
+}
+
+void SEIP_handler(struct trap_regs * regs) {
+    int irq = plic_claim();
+    
+    if (irq == UART0_IRQ) {
+        uart_intr();
+    //} else if(irq == VIRTIO0_IRQ){
+        //virtio_disk_intr();
+    } else if(irq){
+        char str[6] = "irq:0";
+        str[4] = '0' + irq;
+        panic(str);
+    }
+    
+    if(irq) {
+        plic_complete(irq);
     }
 }
 

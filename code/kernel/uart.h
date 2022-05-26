@@ -10,6 +10,7 @@
 
 #define UART0_BASE 0x10000000UL
 #define UART0_SIZE 0x100UL
+#define UART0_IRQ 10
 
 void uart_init(void);
 int uart_putc(char ch);

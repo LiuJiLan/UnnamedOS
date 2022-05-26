@@ -16,6 +16,7 @@
 #include "file.h"
 #include "ccache.h"
 #include "uart.h"
+#include "plic.h"
 
 
 void panic(char * s) {  //  用于GDB来debug
@@ -46,6 +47,10 @@ void kmain(void) {
         vm_2_kpgtbl();
         kinit2();
         
+        kvmmap(PLIC_BASE, PLIC_SIZE, PTE_R | PTE_W);
+        plic_init();
+        plic_init_hart();
+        
         time_init();    //  这个函数要求关中断
         
         file_init();
@@ -63,6 +68,7 @@ void kmain(void) {
         __sync_synchronize();
         
         vm_2_kpgtbl();
+        //plic_init_hart();
         panic("OTHER HART 0 IS OK");
     }
     

@@ -44,22 +44,24 @@ int main(void) {
         }
     }
     */
-    int fd[2];
+    //int fd[2];
     char buf2[30];
-    pipe(fd);
+    //pipe(fd);
     cpid = fork();
     if (cpid == 0) {
         //getpid();
         //int new = dup(1);
-        write(fd[1], buf, 30);
+        //write(fd[1], buf, 30);
+        //read(0, buf2, 3);
+        //write(1, buf2, 3);
         return 0;
     } else {
         printf("CHILD:%d\n", cpid);
         waitpid(cpid, NULL, 0, NULL);
     }
-    read(fd[0], buf2, 30);
-    printf("PIPE_OUT");
-    write(1, buf2, 30);
+    //read(fd[0], buf2, 30);
+    //printf("PIPE_OUT");
+    //write(1, buf2, 30);
     
     cpid = fork();
     if (cpid == 0) {

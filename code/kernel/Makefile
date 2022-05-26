@@ -23,6 +23,7 @@ KERNEL_C = \
 	ccache.c \
 	uart.c \
 	pipe.c \
+	plic.c \
 	string.c \
 	
 KERNEL_PY = \
