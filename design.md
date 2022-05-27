@@ -914,5 +914,6 @@ type get(void) {	//	获取头部元素, 不会同时pop
   
 
   - [ ] 发现了BUG新的表征, 出错的地方还是上面反汇编代码的`lw	a5,4(a5)`, 发现开了3个线程, 有一个进程会一直卡在刚刚进入`proc_find_runnable_to_run`中一部分的状态, 而且不能被时钟中断给中断
+  - [ ] bcache暂时参考xv6-riscv
 
 
